@@ -4,6 +4,7 @@ __pycache__/
 *.pyc
 FEEDBACK_NOTES.md
 GUIA_GABI.md
+.claude/
 candidates/
 evidence/run_*.json
 logs/

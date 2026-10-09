@@ -36,8 +36,11 @@ def _environment():
     return _env
 
 
-def judge_in_sandbox(app_dir, poc):
-    """Return (poc_exit, poc_output, tests_exit, tests_output) for app_dir/app.py."""
+def judge_in_sandbox(app_dir, poc, run_tests=True):
+    """Return (poc_exit, poc_output, tests_exit, tests_output) for app_dir/app.py.
+
+    With run_tests=False only the PoC runs (verification needs no regression tests).
+    """
     env = _environment()
     files = {f"{WORK}/{name}": name for name in SUPPORT_FILES}
     files[f"{WORK}/{APP}/app.py"] = str(Path(app_dir) / "app.py")
@@ -47,5 +50,7 @@ def judge_in_sandbox(app_dir, poc):
         return res.exit_code, ((res.stdout or "") + (res.stderr or "")).strip()
 
     poc_code, poc_out = run(f"python {poc} {APP}")
+    if not run_tests:
+        return poc_code, poc_out, None, ""
     test_code, test_out = run(f"APP_DIR={APP} python -m pytest -q")
     return poc_code, poc_out, test_code, test_out

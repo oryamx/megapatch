@@ -54,9 +54,11 @@ def run(cmd, env=None):
     return proc.returncode, (proc.stdout + proc.stderr).strip()
 
 
-def judge_local(app_dir, poc):
+def judge_local(app_dir, poc, run_tests=True):
     """Judge on THIS machine. Same contract as judge_in_sandbox."""
     poc_code, poc_out = run([sys.executable, poc, str(app_dir)])
+    if not run_tests:
+        return poc_code, poc_out, None, ""
     env = {**os.environ, "APP_DIR": str(app_dir)}
     test_code, test_out = run([sys.executable, "-m", "pytest", "-q"], env=env)
     return poc_code, poc_out, test_code, test_out
@@ -75,7 +77,7 @@ def confirm_vulnerability(judge, cwe):
 
     Exit 1 = the exploit fired (CONFIRMED), 0 = it did not, 2 = the app is broken.
     """
-    poc_code, evidence, _, _ = judge(TARGET, CLASSES[cwe]["poc"])
+    poc_code, evidence, _, _ = judge(TARGET, CLASSES[cwe]["poc"], run_tests=False)
     return poc_code, evidence
 
 
@@ -139,6 +141,7 @@ def patch_cycle(judge, where, cwe, evidence, auto_yes=False, generate=True):
     print("VERDICT:", "PATCH ACCEPTED (red -> green)" if accepted else "PATCH REJECTED")
     return {
         "approved": True, "accepted": accepted, "diff": diff, "human_wait_s": human_wait,
+        "approval": "auto (--yes)" if auto_yes else "human",
         "poc_exit": poc_code, "poc_output": poc_out,
         "tests_exit": test_code, "tests_output": test_out,
     }

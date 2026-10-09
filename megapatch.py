@@ -17,6 +17,7 @@ import time
 from datetime import datetime, timezone
 from pathlib import Path
 
+import enrich
 import llm
 import run_patch_loop as loop
 from catalog import CLASSES
@@ -40,6 +41,7 @@ def main():
     parser.add_argument("--yes", action="store_true")
     parser.add_argument("--eval-only", action="store_true")
     parser.add_argument("--local", action="store_true")
+    parser.add_argument("--no-enrich", action="store_true", help="skip the Tavily evidence step")
     args = parser.parse_args()
 
     started = time.time()
@@ -56,6 +58,26 @@ def main():
     for r in ranked[: args.top]:
         verdicts[r["id"]] = verdict_for(r, judge)
         print(f"  {r['id']}: {verdicts[r['id']]['verdict']}")
+
+    enrichment = {}
+    to_enrich = [
+        r for r in ranked[: args.top]
+        if verdicts[r["id"]]["verdict"] == "NOT_VERIFIABLE" and r["cve"] and not args.no_enrich
+    ]
+    if to_enrich:
+        print("\n=== 2b. Public evidence for what execution cannot verify (Tavily + Nemotron) ===")
+        for r in to_enrich:
+            enrichment[r["id"]] = enrich.enrich_finding(r)
+            info = enrichment[r["id"]]
+            if "skipped" in info or "error" in info:
+                print(f"  {r['id']}: skipped ({info.get('skipped') or info.get('error')})")
+            else:
+                a = info.get("assessment") or {}
+                print(
+                    f"  {r['id']}: {len(info['sources'])} sources | exploited in the wild: "
+                    f"{a.get('exploited_in_the_wild', 'n/a')} | public exploit code: "
+                    f"{a.get('public_exploit_code', 'n/a')}"
+                )
 
     print("\n=== 3. Patch + re-test ===")
     patches = {}
@@ -108,7 +130,7 @@ def main():
                      "cvss": r["cvss"], "status": status(r["id"])}
                     for i, r in enumerate(final, 1)
                 ],
-                "verdicts": verdicts, "patches": patches,
+                "verdicts": verdicts, "patches": patches, "enrichment": enrichment,
                 "usage": {"nemotron_calls": len(new_calls), "tokens": tokens, "est_cost_usd": round(cost, 6)},
                 "duration_s": seconds, "human_review_s": round(human_review, 1),
             },

@@ -21,6 +21,7 @@ A scanner gives you thousands of findings, all with a CVSS score, so everything 
 | **NVIDIA Nemotron 3 Super** (`nvidia/nemotron-3-super-120b-a12b`) | Writes the security patch from the exploit evidence. |
 | **Nebius Token Factory** (OpenAI-compatible API) | Serves Nemotron at runtime (`llm.py`). Every call is logged with tokens, latency and estimated cost. |
 | **Nebius Token Factory Sandboxes** (beta, `contree-sdk`) | Runs the PoC, the tests and the model-written patch in an isolated environment, never on the developer's machine (`sandbox_judge.py`). |
+| **Tavily** (runtime web search) | For findings that execution cannot verify, searches public advisories and exploit reports; Nemotron summarizes only what the cited sources support (`enrich.py`). It never changes the ScoreRisk number. Optional: skipped when `TAVILY_API_KEY` is not set. |
 
 ## Quickstart
 
@@ -52,7 +53,15 @@ cp .env.example .env    # then fill NEBIUS_API_KEY and NEBIUS_PROJECT_ID
 python megapatch.py
 ```
 
-The pipeline ranks the findings, verifies the top 8 in the sandbox, asks Nemotron for a patch for each confirmed one, shows you the diff, and, after you approve, judges it in the sandbox. Output goes to `evidence/run_<timestamp>.json`. Useful flags: `--top N`, `--yes`, `--eval-only`, `--local`.
+The pipeline ranks the findings, verifies the top 8 in the sandbox, asks Nemotron for a patch for each confirmed one, shows you the diff, and, after you approve, judges it in the sandbox. Output goes to `evidence/run_<timestamp>.json`. Useful flags: `--top N`, `--yes`, `--eval-only`, `--local`, `--no-enrich`.
+
+**4. Look at the result** in a browser:
+
+```bash
+streamlit run dashboard.py
+```
+
+The dashboard shows the prioritized queue, the before/after proof for each patch, the public evidence for findings that execution cannot verify, and why the order is what it is. It reads the latest file in `evidence/` and needs no credentials.
 
 ## What the data is (and is not)
 
@@ -60,6 +69,16 @@ The pipeline ranks the findings, verifies the top 8 in the sandbox, asks Nemotro
 - **Fictional:** the inventory in `data/findings.json` (a made-up project called demo-shop) and the exposure of its assets. Weights and constants in `scorerisk.py` are starting points, not validated values; `sensitivity.py` checks which conclusions depend on them.
 - **Verifiable in the MVP:** only the three vulnerability classes of our own practice app (`target_app/`). Other findings are ranked but reported as `NOT_VERIFIABLE`, never as safe.
 - **Not measured yet:** we do not claim any precision figure for the ranking.
+
+## Data sources and attribution
+
+- **CISA Known Exploited Vulnerabilities (KEV) Catalog**, https://www.cisa.gov/known-exploited-vulnerabilities-catalog
+- **EPSS** (Exploit Prediction Scoring System) data provided by FIRST, https://www.first.org/epss/
+- **CVSS base scores** from the NVD. *This product uses data from the NVD API but is not endorsed or certified by the NVD.*
+
+## How this was built
+
+Developed during the hackathon submission period (the code in this repository was written after 2026-08-26). It was built with AI coding assistance (Claude Code); the commit history carries a `Co-Authored-By` trailer. The product runs on Nemotron through Nebius Token Factory and executes untrusted code only inside Nebius Sandboxes.
 
 ## Safety and scope
 
