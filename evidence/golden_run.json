@@ -1,0 +1,383 @@
+{
+  "run_at": "20261009T225158Z",
+  "executor": "the Nebius sandbox",
+  "top_n": 8,
+  "model": "nvidia/nemotron-3-super-120b-a12b",
+  "final_order": [
+    {
+      "position": 1,
+      "id": "F-12",
+      "scorerisk_rank": 5,
+      "pre_score": 64.6,
+      "cvss": 9.8,
+      "status": "CONFIRMED -> PATCHED, same PoC now fails"
+    },
+    {
+      "position": 2,
+      "id": "F-13",
+      "scorerisk_rank": 6,
+      "pre_score": 64.6,
+      "cvss": 9.8,
+      "status": "CONFIRMED -> PATCHED, same PoC now fails"
+    },
+    {
+      "position": 3,
+      "id": "F-14",
+      "scorerisk_rank": 8,
+      "pre_score": 60.0,
+      "cvss": 7.5,
+      "status": "CONFIRMED -> PATCHED, same PoC now fails"
+    },
+    {
+      "position": 4,
+      "id": "F-01",
+      "scorerisk_rank": 1,
+      "pre_score": 100.0,
+      "cvss": 10.0,
+      "status": "NOT_VERIFIABLE"
+    },
+    {
+      "position": 5,
+      "id": "F-03",
+      "scorerisk_rank": 2,
+      "pre_score": 93.1,
+      "cvss": 8.8,
+      "status": "NOT_VERIFIABLE"
+    },
+    {
+      "position": 6,
+      "id": "F-04",
+      "scorerisk_rank": 3,
+      "pre_score": 90.5,
+      "cvss": 7.5,
+      "status": "NOT_VERIFIABLE"
+    },
+    {
+      "position": 7,
+      "id": "F-02",
+      "scorerisk_rank": 4,
+      "pre_score": 79.9,
+      "cvss": 9.8,
+      "status": "NOT_VERIFIABLE"
+    },
+    {
+      "position": 8,
+      "id": "F-08",
+      "scorerisk_rank": 7,
+      "pre_score": 61.2,
+      "cvss": 7.5,
+      "status": "NOT_VERIFIABLE"
+    },
+    {
+      "position": 9,
+      "id": "F-10",
+      "scorerisk_rank": 9,
+      "pre_score": 45.6,
+      "cvss": 7.5,
+      "status": "not verified (outside top N)"
+    },
+    {
+      "position": 10,
+      "id": "F-06",
+      "scorerisk_rank": 10,
+      "pre_score": 25.1,
+      "cvss": 7.2,
+      "status": "not verified (outside top N)"
+    },
+    {
+      "position": 11,
+      "id": "F-05",
+      "scorerisk_rank": 11,
+      "pre_score": 20.7,
+      "cvss": 9.1,
+      "status": "not verified (outside top N)"
+    },
+    {
+      "position": 12,
+      "id": "F-11",
+      "scorerisk_rank": 12,
+      "pre_score": 19.9,
+      "cvss": 9.8,
+      "status": "not verified (outside top N)"
+    },
+    {
+      "position": 13,
+      "id": "F-09",
+      "scorerisk_rank": 13,
+      "pre_score": 17.4,
+      "cvss": 7.5,
+      "status": "not verified (outside top N)"
+    },
+    {
+      "position": 14,
+      "id": "F-07",
+      "scorerisk_rank": 14,
+      "pre_score": 15.8,
+      "cvss": 7.5,
+      "status": "not verified (outside top N)"
+    }
+  ],
+  "verdicts": {
+    "F-01": {
+      "verdict": "NOT_VERIFIABLE",
+      "evidence": "no PoC for this class in the MVP"
+    },
+    "F-03": {
+      "verdict": "NOT_VERIFIABLE",
+      "evidence": "no PoC for this class in the MVP"
+    },
+    "F-04": {
+      "verdict": "NOT_VERIFIABLE",
+      "evidence": "no PoC for this class in the MVP"
+    },
+    "F-02": {
+      "verdict": "NOT_VERIFIABLE",
+      "evidence": "no PoC for this class in the MVP"
+    },
+    "F-12": {
+      "verdict": "CONFIRMED",
+      "evidence": "app under test      : app_under_test\nnormal  'alice'     -> 1 row(s)\npayload \"' OR '1'='1\" -> 3 row(s)\nVULNERABLE: the payload returned rows it should not."
+    },
+    "F-13": {
+      "verdict": "CONFIRMED",
+      "evidence": "app under test      : app_under_test\nnormal  'example.test' -> 'example.test'\npayload 'x && echo MARK_EXECUTED' -> lines ['x', 'MARK_EXECUTED']\nVULNERABLE: the injected command ran (marker printed on its own line)."
+    },
+    "F-08": {
+      "verdict": "NOT_VERIFIABLE",
+      "evidence": "no PoC for this class in the MVP"
+    },
+    "F-14": {
+      "verdict": "CONFIRMED",
+      "evidence": "app under test      : app_under_test\nnormal  'readme.txt' -> 'Welcome to the demo app.'\npayload '../secret.txt' -> 'FAKE-SECRET-TOKEN-0000'\nVULNERABLE: a file outside the public folder was returned."
+    }
+  },
+  "patches": {
+    "F-12": {
+      "approved": true,
+      "accepted": true,
+      "diff": "--- target_app/app.py\n+++ candidates/CWE-89/app.py\n@@ -44,10 +44,10 @@\n     @app.get(\"/users/search\")\n     def search_users():\n         name = request.args.get(\"name\", \"\")\n-        # VULNERABLE (CWE-89): user input is concatenated straight into the SQL string.\n-        query = f\"SELECT id, username, email FROM users WHERE username = '{name}'\"\n+        # FIXED: Use parameterized query to avoid SQL injection.\n+        query = \"SELECT id, username, email FROM users WHERE username = ?\"\n         try:\n-            rows = db.execute(query).fetchall()\n+            rows = db.execute(query, (name,)).fetchall()\n         except sqlite3.Error as exc:\n             return jsonify(error=str(exc)), 400\n         return jsonify(\n",
+      "human_wait_s": 0.0,
+      "approval": "auto (--yes)",
+      "poc_exit": 0,
+      "poc_output": "app under test      : app_under_test\nnormal  'alice'     -> 1 row(s)\npayload \"' OR '1'='1\" -> 0 row(s)\nSAFE: the payload did not leak extra rows.",
+      "tests_exit": 0,
+      "tests_output": ".....                                                                    [100%]\n5 passed in 0.20s"
+    },
+    "F-13": {
+      "approved": true,
+      "accepted": true,
+      "diff": "--- target_app/app.py\n+++ candidates/CWE-78/app.py\n@@ -57,9 +57,9 @@\n     @app.get(\"/lookup\")\n     def lookup():\n         host = request.args.get(\"host\", \"\")\n-        # VULNERABLE (CWE-78): user input becomes part of a shell command line.\n-        cmd = f'\"{sys.executable}\" -c \"import sys; print(sys.argv[1])\" {host}'\n-        result = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=10)\n+        # FIXED: Avoid shell=True; pass arguments as a list.\n+        cmd = [sys.executable, \"-c\", \"import sys; print(sys.argv[1])\", host]\n+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=10)\n         return jsonify(output=result.stdout)\n \n     @app.get(\"/files\")\n",
+      "human_wait_s": 0.0,
+      "approval": "auto (--yes)",
+      "poc_exit": 0,
+      "poc_output": "app under test      : app_under_test\nnormal  'example.test' -> 'example.test'\npayload 'x && echo MARK_EXECUTED' -> lines ['x && echo MARK_EXECUTED']\nSAFE: the payload was treated as plain text.",
+      "tests_exit": 0,
+      "tests_output": ".....                                                                    [100%]\n5 passed in 0.19s"
+    },
+    "F-14": {
+      "approved": true,
+      "accepted": true,
+      "diff": "--- target_app/app.py\n+++ candidates/CWE-22/app.py\n@@ -65,11 +65,16 @@\n     @app.get(\"/files\")\n     def read_file():\n         name = request.args.get(\"name\", \"\")\n-        # VULNERABLE (CWE-22): the name is joined to the public folder without\n-        # checking where the resulting path really points.\n-        path = public / name\n+        # FIXED (CWE-22): ensure the resolved path stays inside the public directory.\n         try:\n-            return jsonify(content=path.read_text(encoding=\"utf-8\"))\n+            target = (public / name).resolve()\n+            # Raise ValueError if target is not a subpath of public.\n+            target.relative_to(public)\n+        except (ValueError, RuntimeError):\n+            return jsonify(error=\"not found\"), 404\n+\n+        try:\n+            return jsonify(content=target.read_text(encoding=\"utf-8\"))\n         except OSError:\n             return jsonify(error=\"not found\"), 404\n \n",
+      "human_wait_s": 0.0,
+      "approval": "auto (--yes)",
+      "poc_exit": 0,
+      "poc_output": "app under test      : app_under_test\nnormal  'readme.txt' -> 'Welcome to the demo app.'\npayload '../secret.txt' -> ''\nSAFE: the private file was not returned.",
+      "tests_exit": 0,
+      "tests_output": ".....                                                                    [100%]\n5 passed in 0.20s"
+    }
+  },
+  "enrichment": {
+    "F-01": {
+      "query": "CVE-2021-44228 exploited in the wild public exploit proof of concept vendor patch advisory",
+      "sources": [
+        {
+          "title": "Critical Remote Code Execution in Apache Log4j | Rapid7 Blog",
+          "url": "https://www.rapid7.com/blog/post/2021/12/10/widespread-exploitation-of-critical-remote-code-execution-in-apache-log4j",
+          "snippet": "Successful exploitation of CVE-2021-44228 can allow a remote, unauthenticated attacker to take full control of a vulnerable target system. CVE-2021-44228 is being broadly and opportunistically exploited in the wild as of December 10, 2021. Multiple sources have noted both scanning and exploit attempts against this vulnerability. Rapid7 researchers have developed and tested a proof-of-concept exploit that works against the latest Struts2 Showcase (2.5.27) running on Tomcat. We expect attacks to [...] According to Apache\u2019s advisory for CVE-2021-44228, the behavior that allows for exploitation of the flaw has been disabled by default starting in version 2.15.0. Apache later updated their advisory to note that the fix for CVE-2021-44228 was incomplete in certain non-default configurations. CVE-2021-45046 has been issued to track the incomplete fix, and both vulnerabilities have been mitigated in Log4j 2.16.0. An additional Denial of Service (DoS) vulnerability, CVE-2021-45105, was later fixed [...] Rapid7 Labs, Managed Detection and Response (MDR), and tCell teams recommend filtering inbound requests that contain the string \u201c${jndi:\u201d in any inbound request and monitoring all application and web server logs for similar strings.\n\nEmergentThreat Labs has made Suricata and Snort IDS coverage for known exploit paths of CVE-2021-44228.\n\nResearchers are maintaining a public list of known affected vendor products and third-party advisories related to the Log4j vulnerability.\n\n## Rapid7 customers"
+        },
+        {
+          "title": "Apache log4j Vulnerability CVE-2021-44228: Analysis and Mitigations",
+          "url": "https://unit42.paloaltonetworks.com/apache-log4j-vulnerability-cve-2021-44228",
+          "snippet": "On Dec. 9, 2021, a remote code execution (RCE) vulnerability in Apache Log4j 2 was identified being exploited in the wild. Public proof of concept (PoC) code was released and subsequent investigation revealed that exploitation was incredibly easy to perform. By submitting a specially crafted request to a vulnerable system, depending on how the system is configured, an attacker is able to instruct that system to download and subsequently execute a malicious payload. Due to the discovery of this [...] On Dec. 17, version 2.17.0 was released to patch CVE-2021-45105. This new vulnerability results from version 2.16 not protecting from uncontrolled recursion from self-referential lookups. Exploitation allows for a denial of service (DOS) attack against the process running Log4j. This vulnerability is less critical than the previous RCE vulnerabilities but could allow an attacker to crash a vulnerable application. Please see the Apache Log4j security advisory for potential mitigations. [...] ## Exploit\n\nExploit code for the CVE-2021-44228 vulnerability has been made publicly available. Any user input hosted by a Java application using the vulnerable version of log4j 2.x may be exposed to this attack, depending on how logging is implemented within the Java application.\n\n### In-the-Wild Attacks"
+        },
+        {
+          "title": "LOG4J REMOTE CODE EXECUTION VULNERABILITY",
+          "url": "https://www.crowdstrike.com/wp-content/uploads/2021/12/QRG-5.0-CrowdStrike-Services-Information-Guide-Log4j-Remote-Code-Execution-Vulnerability-v5.pdf",
+          "snippet": "code revisions from the vendor1. Log4j2 is an open-source, Java-based logging framework used in numerous Apache frameworks (including Struts2, Solr, Druid, and Flink)2. As of December 9, 2021, CrowdStrike Falcon Overwatch and external sources have confirmed active exploitation of this vulnerability in the wild. This critical vulnerability, tracked as CVE-2021-44228 (aka \u201cLog4Shell\u201d), impacts all versions of Log4j2 from 2.0-beta9 to 2.14.1. Exploitation of the Log4j2 vulnerability allows Remote"
+        },
+        {
+          "title": "Log4Shell Unleashed: Inside CVE-2021-44228 and the Log4j RCE Crisis - ZeroPath Blog | ZeroPath",
+          "url": "https://zeropath.com/blog/cve-2021-44228-log4shell-log4j-rce",
+          "snippet": "The Log4Shell vulnerability (CVE-2021-44228) exploits the Java Naming and Directory Interface (JNDI) feature in Apache Log4j 2, allowing attackers to execute arbitrary code on affected systems. A practical demonstration of this exploit is provided by the `log4j-shell-poc` repository.\n\nOverview of the Proof-of-Concept (PoC): [...] CVE-2021-44228, dubbed Log4Shell, is a remote code execution (RCE) vulnerability in Apache Log4j 2.x (specifically, log4j-core versions 2.0-beta9 through 2.14.1). The flaw resides in Log4j\u2019s message lookup substitution feature, particularly its Java Naming and Directory Interface (JNDI) integration. When message lookup is enabled (the default in affected versions), Log4j will interpret `${}` patterns in log messages and resolve them dynamically\u2014including JNDI lookups to external resources. [...] In December 2021, the cybersecurity world was rocked by a vulnerability so severe and so easy to exploit that it sent shockwaves through the global technology ecosystem. Log4Shell (CVE-2021-44228) wasn\u2019t just another bug\u2014it was a critical flaw in Apache Log4j, a logging library embedded in countless Java applications, cloud services, and enterprise products. Within hours of public disclosure, attackers were scanning the internet, weaponizing the flaw, and compromising everything from Minecraft"
+        },
+        {
+          "title": "Log4Shell: How It\u2019s Exploited and Mitigating Damage",
+          "url": "https://www.recordedfuture.com/blog/log4shell-exploited-how-to-mitigate-damage",
+          "snippet": "CVE-2021-44228 is a critical vulnerability affecting Log4j, a widely used, open-source logging library written in Java. The vulnerability in Log4j will parse a specially crafted log message insecurely, causing it to execute remote code with the full privileges of the main program. The exploit has been dubbed Log4Shell."
+        }
+      ],
+      "assessment": {
+        "exploited_in_the_wild": "yes",
+        "public_exploit_code": "yes",
+        "vendor_fix_available": "unclear",
+        "summary": "CVE-2021-44228 (Log4Shell) was actively exploited in the wild as of Dec\u202f9\u201110\u202f2021 [1][2][3]; public proof\u2011of\u2011concept code was released [2][4]; no explicit vendor patch for this CVE is cited in the sources [unclear]"
+      },
+      "tavily_credits": 1
+    },
+    "F-03": {
+      "query": "CVE-2023-4863 exploited in the wild public exploit proof of concept vendor patch advisory",
+      "sources": [
+        {
+          "title": "CVE-2023-4863 and CVE-2023-5217 Exploited in the Wild | Wiz Blog",
+          "url": "https://www.wiz.io/blog/cve-2023-4863-and-cve-2023-5217-exploited-in-the-wild",
+          "snippet": "|\n\nCVE-2023-4863 is a critical vulnerability in libwebp, and CVE-2023-5217 is a high severity vulnerability in libvpx, both reportedly exploited in the wild. Both are mainly client side vulnerabilities and thus unlikely to be exploitable on most affected cloud workloads other than virtual desktops and servers that handle images or video. Customers should therefore prioritize patching these cases as well as vulnerable instances detected in build environments.\n\n# What is CVE-2023-4863? [...] ## Background\n\nOn September 11th, 2023, a vulnerability was assigned CVE-2023-4863 that reportedly only affected Chrome. More specifically, it was described as a heap buffer overflow in WebP in Chrome, allowing a remote attacker to perform an out of bounds memory write via a crafted HTML page. [...] While both vulnerabilities have been reportedly exploited in the wild, no concrete details about the corresponding malicious activity have been published as of October 1, 2023. If the reported overlap between CVE-2023-4863 and CVE-2023-41064 turns out to be correct, then BLASTPASS would currently be the only publicly known campaign exploiting the relevant flaw in libwebp.\n\n# Which products are affected?\n\n## CVE-2023-4863"
+        },
+        {
+          "title": "CVE-2023-4863 Vulnerability: Analysis, Detection, Removal | Huntress",
+          "url": "https://www.huntress.com/threat-library/vulnerabilities/cve-2023-4863",
+          "snippet": "Proof-of-concept (PoC) exploits for CVE-2023-4863 have been widely circulated among security researchers. Active exploitation has already been observed in the wild, with attackers targeting end-user devices and enterprise networks. Exploit frameworks like Metasploit and other public repositories have showcased working examples.\n\n## How to detect CVE-2023-4863 vulnerability [...] CVE-2023-4863 is a critical remote code execution (RCE) vulnerability that affects certain implementations of WebP, an image format commonly used in web browsers. It exploits a heap buffer overflow condition due to improper input validation when handling crafted WebP images. This can enable attackers to execute arbitrary code on the target system, compromise its integrity, and potentially take complete control of affected devices. It has a CVSS score of 9.8, marking it as highly severe. [...] CVE-2023-4863 is a heap buffer overflow vulnerability in the WebP image format library. Attackers can craft malicious WebP files to exploit this flaw, resulting in unauthorized code execution.\n\nTypically, systems are compromised when users open malicious WebP images through vulnerable applications like browsers or email clients. Viewing these images triggers the exploit and executes the attacker\u2019s payload."
+        },
+        {
+          "title": "CVE-2023-4863 | Arctic Wolf",
+          "url": "https://arcticwolf.com/resources/blog/cve-2023-4863",
+          "snippet": "We have not identified a public proof of concept (PoC) exploit that allows for code execution; however, we have identified a PoC exploit for a DoS condition. Threat actors could leverage the DoS PoC exploit as a starting point to develop a PoC exploit that leads to arbitrary code execution. \n\n## Recommendations for CVE-2023-4863\n\nClosely Monitor Software Vendor Patch Advisories Related to CVE-2023-4863 [...] The vulnerability has been patched in the latest version of libwebp; however, the security patch is not automatically applied to software products that use the library under the hood of their code, such as electron-based applications and Chromium-based browsers. Remediating CVE-2023-4863 in third-party software products is only possible by applying the official security updates from vendors as they patch their products. [...] On September 7, 2023, Apple released emergency security updates to fix a buffer overflow vulnerability (CVE-2023-41064) impacting macOS, iOS, iPadOS, and watchOS products that was used in a zero-click exploitation chain by the NSO Group. Shortly after, on September 11, 2023, Google released an update to fix a buffer overflow vulnerability (CVE-2023-4863) in Google Chrome, which was reported by Apple\u2019s Security Engineering and Architecture (SEAR) and Citizen Lab. Both vulnerabilities were nearly"
+        },
+        {
+          "title": "NVD-CVE-2023-4863",
+          "url": "https://nvd.nist.gov/vuln/detail/cve-2023-4863",
+          "snippet": "### This CVE is in CISA's Known Exploited Vulnerabilities Catalog\n\nReference CISA's BOD 22-01 and Known Exploited Vulnerabilities Catalog for further guidance and requirements.\n\n| Vulnerability Name | Date Added | Due Date | Required Action |\n ---  --- |\n| Google Chromium WebP Heap-Based Buffer Overflow Vulnerability | September 13, 2023 | October 04, 2023 | Apply mitigations per vendor instructions or discontinue use of the product if mitigations are unavailable. |\n\n### Weakness Enumeration"
+        },
+        {
+          "title": "CVE-2023-4863 | Threat Intel",
+          "url": "https://www.lookout.com/threat-intelligence/article/cve-2023-4863",
+          "snippet": "Google released a patch for a new zero-day vulnerability in Chrome tracked as CVE-2023-4863 on September 12th. CISA also listed the CVE in their database after Google disclosed that there is active exploitation of CVE-2023-4863. CISA\u2019s action mandates government organizations to apply the fix by October 4th, 2023. A desktop fix was released for the same earlier in the month. This is a case of heap buffer overflow in the WebP image format of Google Chrome. It allows a remote attacker to perform"
+        }
+      ],
+      "assessment": {
+        "exploited_in_the_wild": "yes",
+        "public_exploit_code": "yes",
+        "vendor_fix_available": "yes",
+        "summary": "CVE-2023-4863 is a critical heap\u2011buffer overflow in libwebp that is being exploited in the wild [1], has publicly circulating PoC exploit code [2], and a fix is available in the latest libwebp release [3]."
+      },
+      "tavily_credits": 1
+    },
+    "F-04": {
+      "query": "CVE-2023-44487 exploited in the wild public exploit proof of concept vendor patch advisory",
+      "sources": [
+        {
+          "title": "HTTP/2 Rapid Reset Vulnerability, CVE-2023-44487 | CISA",
+          "url": "https://www.cisa.gov/news-events/alerts/2023/10/10/http2-rapid-reset-vulnerability-cve-2023-44487",
+          "snippet": "CISA Logo\n\nShare:\n\nOpens in a new window   Opens in a new window   Opens in a new window\n\nAlert\n\n# HTTP/2 Rapid Reset Vulnerability, CVE-2023-44487\n\nRelease Date\n\nResearchers and vendors have disclosed a denial-of-service (DoS) vulnerability in HTTP/2 protocol. The vulnerability (CVE-2023-44487), known as Rapid Reset, has been exploited in the wild in August 2023 through October 2023. [...] CISA recommends organizations that provide HTTP/2 services apply patches when available and consider configuration changes and other mitigations discussed in the references below. For more information on Rapid Reset, see:"
+        },
+        {
+          "title": "CVE-2023-44487 - Exploits & Severity - Feedly",
+          "url": "https://feedly.com/cve/CVE-2023-44487",
+          "snippet": "Multiple proof-of-concept exploits are available on github.com, netapp.com. The vulnerability is actively being exploited in the wild and was added to the CISA Known Exploited Vulnerability list. Its exploitation has been reported by various sources, including intego.com, thehackernews.com, cybersecurity-help.cz. Malware such as FIXED (source:Chainguard: Unchained), httpdropper (source:Cisco Talos Blog), ROMCOM RAT (source:Tenable Blog) are known to have weaponized this vulnerability. Threat [...] ### Impact\n\nAn unauthenticated attacker over the network can send specially crafted HTTP/2 requests to exhaust server resources and render the HTTP/2 service unavailable to legitimate users, as was actively exploited in the wild from August through October 2023.\n\n### Exploitation [...] EPSS\n\nFIRST assigned an EPSS Score of 0.19% (Percentile: 57%)\n\nOct 11, 2023 at 2:45 PM\n\nKnown Exploitation\n\nAttacks in the wild have been reported by Latest articles about Ongoing threats.See article\n\nOct 13, 2023 at 12:10 PM / Latest articles about Ongoing threats / Corroborated by 6 other sources\n\nStatic CVE timeline graph\n\n### Affected systems\n\nGolang/networking\n\n+MMM more\n\n### Proof of Concept\n\n+MMM more\n\n### Known Exploitation\n\n+MMM more\n\n### Patches"
+        },
+        {
+          "title": "HTTP/2 vulnerability CVE-2023-44487",
+          "url": "https://my.f5.com/manage/s/article/K000137106",
+          "snippet": "\u00d7\nSorry to interrupt\n\nCSS Error\n\nSecurity Advisory\n\n# K000137106: HTTP/2 vulnerability CVE-2023-44487\n\nPublished Date: Oct 10, 2023\nUpdated Date: Feb 23, 2026\n\nSecurity Advisory Description\n\nThe HTTP/2 protocol allows a denial of service (server resource consumption) because request cancellation can reset many streams quickly, as exploited in the wild in August through October 2023. (CVE-2023-44487 also known as HTTP/2 Rapid Reset Attack)\n\nImpact\n\nBIG-IP and BIG-IP Next [...] This vulnerability allows a remote, unauthenticated attacker to cause an increase in CPU usage that can lead to a denial-of-service (DoS) on the BIG-IP system. There is no control plane exposure; this is a data plane issue only. [...] F5 Distributed Cloud is not vulnerable to this type of attack. If connections come only from F5 Regional Edge sites or from locally deployed Customer Edge sites to the backend, that backend is protected. Customer Edge sites must be updated to the latest version of crt-20231010-2541 in order to resolve the issue.\n\nSecurity Advisory Status"
+        },
+        {
+          "title": "CVE-2023-44487 Impact of Rapid Reset and HTTP/2 DoS Vulnerabilities (CVE-2023-44487, CVE-2023-35945)",
+          "url": "https://security.paloaltonetworks.com/CVE-2023-44487",
+          "snippet": "PAN-OS firewalls that do not perform decryption are not impacted by the DDoS attack in encrypted network traffic.\n\n### Severity: NONE\n\nCVSSv3.1 Base Score: 0 (CVSS:3.1/AV:P/AC:H/PR:H/UI:R/S:U/C:N/I:N/A:N)\n\n### Exploitation Status\n\nPalo Alto Networks is not aware of any malicious exploitation or customer reports of this issue in any of our products. However, this issue has been exploited in the wild since August 2023.\n\n### Weakness Type\n\nCWE-400 Uncontrolled Resource Consumption\n\n### Solution [...] Palo Alto Networks Security Advisories / CVE-2023-44487\n\n## CVE-2023-44487 Impact of Rapid Reset and HTTP/2 DoS Vulnerabilities (CVE-2023-44487, CVE-2023-35945)\n\nSeverity 0 \u00b7 NONE\n\nAttack Vector Not applicable\n\nScope Not applicable\n\nAttack Complexity Not applicable\n\nConfidentiality Impact NONE\n\nPrivileges Required Not applicable\n\nIntegrity Impact NONE\n\nUser Interaction Not applicable\n\nAvailability Impact NONE\n\nCVE JSON CSAF  \n\nPublished 2023-10-11\n\nUpdated 2023-10-25\n\nDiscovered externally"
+        },
+        {
+          "title": "RHSB-2023-003 HTTP/2 Rapid Reset (CVE-2023-44487 and CVE-2023-39325) | Red Hat Customer Portal",
+          "url": "https://access.redhat.com/security/vulnerabilities/RHSB-2023-003",
+          "snippet": "This issue was rated with a CVSSv3 Score of 7.5 and classified as having an Important security impact.\n\nThe US Cybersecurity and Infrastructure Security Agency (CISA) has declared this vulnerability as an active exploit. Additionally, this vulnerability is reported as being actively exploited in the wild since August 2023.\n\nFurther, any Red Hat product that is supported on Red Hat Enterprise Linux, including RHEL CoreOS, is also potentially impacted. This includes: [...] This vulnerability leverages both of these features by creating a large number of streams within the same connection and subsequently cancels them using the RST\\_STREAM  frame before receiving a reply to the initial request. This induces the server to decompress and interpret all of the sent frames, allocating a large amount of resources, eventually starving the system. By exploiting this behavior, the attacker avoids topping out the maximum limit of connections configured in the server while"
+        }
+      ],
+      "assessment": {
+        "exploited_in_the_wild": "yes",
+        "public_exploit_code": "yes",
+        "vendor_fix_available": "unclear",
+        "summary": "CVE-2023-44487 (HTTP/2 Rapid Reset) lets an unauthenticated attacker trigger excessive CPU usage via rapid stream resets; exploited Aug\u2011Oct 2023 [1]; public PoC code exists on GitHub/netapp [2]; vendors advise applying patches when available."
+      },
+      "tavily_credits": 1
+    },
+    "F-02": {
+      "query": "CVE-2022-22965 exploited in the wild public exploit proof of concept vendor patch advisory",
+      "sources": [
+        {
+          "title": "CVE-2022-22965 (SpringShell): RCE Vulnerability Analysis and Mitigations",
+          "url": "https://unit42.paloaltonetworks.com/cve-2022-22965-springshell",
+          "snippet": "CVE-2022-22965. The CVE-2022-22965 vulnerability allows an attacker unauthenticated remote code execution (RCE), which Unit 42 has observed being exploited in the wild. The exploitation of this vulnerability could result in a webshell being installed onto the compromised server that allows further command execution. [...] ## Conclusion\n\nSpringShell is officially assigned CVE-2022-22965, and the patch was released on March 31, 2022. Since exploitation is straightforward and all the relevant technical details have already gone viral on the internet, it\u2019s possible that SpringShell will become fully weaponized and abused on a larger scale. Developers and users who have projects or products based on JDK9+ and the Spring Framework (or its derivatives) are strongly urged to patch as soon as possible. [...] We also observed a significant amount of exploit attempts using content that again was a modification of the initial webshell in the proof-of-concept. Figure 16 shows the contents that we observed in the wild, which should not be considered a webshell as it does nothing more than display SPRING\\_CORE\\_RCE. The lack of webshell functionality suggests that this is likely uploaded by scanners attempting to discover servers vulnerable to SpringShell."
+        },
+        {
+          "title": "Rapid7 Analysis: CVE-2022-22965",
+          "url": "https://www.rapid7.com/blog/post/ra-cve-2022-22965-analysis",
+          "snippet": "A number of proof of concept exploits exist. To date, they all target applications running on top of Tomcat. Rapid7, GreyNoise, and BadPackets have all observed in-the-wild exploitation and/or scanning attempts. However, the activity appears limited to a small number of actors. Given the very specific configuration requirements for a target to be exploitable, it\u2019s unclear if opportunistic exploitation will ever be viable. We should get more clarity on that as companies review their products and [...] On March 30, 2022, rumors began to circulate about an unpatched remote code execution vulnerability in Spring Framework after a researcher published and quickly deleted a technical writeup and proof-of-concept (PoC) exploit code. The writeup and code targeted a zero-day vulnerability in Spring Framework. After multiple security vendors confirmed the vulnerability, including Rapid7, Spring confirmed it as a ClassLoader manipulation vulnerability on March 31, 2022. The vulnerability is being [...] To test this yourself, please check out this intentionally vulnerable application on GitHub. Thank you to the community for adding a Docker file!\n\nThe original proof of concept shows one way to go about exploiting this vulnerability. Motivated hackers are very clever. They will likely find new techniques and custom ClassLoaders to abuse.\n\n## Detection, Mitigation, and Patching"
+        },
+        {
+          "title": "CVE-2022-22965: VMware Spring Framework RCE Vulnerability",
+          "url": "https://www.sentinelone.com/vulnerability-database/cve-2022-22965",
+          "snippet": "CVE-2022-22965, commonly known as \"Spring4Shell,\" is a critical remote code execution vulnerability affecting VMware Spring Framework applications running on JDK 9 and later. This vulnerability allows unauthenticated attackers to execute arbitrary code on vulnerable systems through the data binding mechanism in Spring MVC or Spring WebFlux applications. The specific exploit requires the application to be deployed as a WAR file on Apache Tomcat, though the underlying vulnerability may be [...] > ### Critical Impact\n>\n> This vulnerability enables unauthenticated remote code execution on affected Spring Framework applications deployed on Tomcat with JDK 9+. Active exploitation has been observed in the wild, and this CVE is listed in CISA's Known Exploited Vulnerabilities (KEV) catalog.\n\n### Affected Products [...] Spring4Shell exploits a flaw in the Spring Framework's data binding functionality when running on Java Development Kit (JDK) version 9 or higher. The vulnerability stems from changes introduced in JDK 9 that exposed the class.module.classLoader property through Spring's data binding mechanism. When an attacker sends specially crafted HTTP requests to a vulnerable application, they can manipulate the class loader to modify Tomcat's logging properties, ultimately achieving arbitrary file write"
+        },
+        {
+          "title": "Spring4Shell Vulnerability: Critical Details and How to Protect Your Organization | Tanium",
+          "url": "https://www.tanium.com/blog/spring4shell-vulnerability-cve-2022-22965-protect-your-organization",
+          "snippet": "Proof-of-concept code for CVE-2022-22965 is widely available and is likely to be weaponized by threat actors. In certain configurations, exploitation of Spring4Shell only requires an attacker to send a specially crafted HTTP request to a vulnerable system. If successful, an unauthenticated attacker would be allowed to execute arbitrary code on the target system. [...] CVE-2022-22965 also called Spring4Shell is a vulnerability in the Spring Core Java framework that could allow unauthenticated remote code execution in Spring MVC (opens in a new tab) and Spring WebFlux (opens in a new tab) applications running on JDK 9+. The exploit requires the vulnerable application to run on Tomcat as a WAR deployment. [...] Emerging Issue\n\n# Spring4Shell Vulnerability: Critical Details and How to Protect Your Organization\n\nNamed CVE-2022-22965, this vulnerability in the widely used Spring Framework has substantial exploit potential\n\nA critical vulnerability in VMWare\u2019s Spring Core Java framework named CVE-2022-22965 (opens in a new tab), or Spring4Shell, was leaked by a security researcher ahead of an official CVE publication."
+        },
+        {
+          "title": "Security Advisory \u2013 Spring4Shell Security vulnerabilities (CVE-2022-22965 and CVE-2022-22963) \u2013 April 06, 2022 - Ex Libris Knowledge Center",
+          "url": "https://knowledge.exlibrisgroup.com/Cross-Product/Security/Advisories/Security_Advisory_%E2%80%93_Spring4Shell_Security_vulnerabilities_(CVE-2022-22965_and_CVE-2022-22963)_%E2%80%93_April_06%2C_2022",
+          "snippet": "Exploitation and Public Announcements\n\nThe Ex Libris Security Incident Response Team (SIRT) is not aware of any public announcements or malicious use of the vulnerability that is described in this advisory in the context of Ex Libris products.\n\nRecord of Changes [...] Overview\n\nOn April 01, 2022, two critical remote code execution (RCE) vulnerabilities (CVE-2022-22965 and CVE-2022-22963) were disclosed in Spring frameworks, a comprehensive programming and configuration model for modern Java-based enterprise applications.\n\nThe vulnerabilities affected the Spring Core and Spring Cloud Functions.\n\nBy exploiting these remote code execution vulnerabilities, it may allow an attacker to bypass access controls, download and subsequently execute a malicious payload. [...] Ex Libris has deployed a signature fix that protects all cloud environments against these vulnerabilities and no action is required by the customers.\n\nRequired Actions for On-Premises / Local Systems\n\nFor locally installed Primo customers:\n\nPrimo on premises customers with Primo versions February 2021 onwards are potentially vulnerable to this threat and are advised to upgrade to the Primo February 2022 version and then follow the instructions [here] in order to upgrade the Tomcat version."
+        }
+      ],
+      "assessment": {
+        "exploited_in_the_wild": "yes",
+        "public_exploit_code": "yes",
+        "vendor_fix_available": "yes",
+        "summary": "Spring4Shell (CVE-2022-22965) is an unauthenticated RCE vulnerability in Spring Framework; it has been exploited in the wild [1][2], public proof\u2011of\u2011code exists [2][4], and a vendor patch was released on March\u202f31\u202f2022 [1]."
+      },
+      "tavily_credits": 1
+    },
+    "F-08": {
+      "query": "CVE-2022-3786 exploited in the wild public exploit proof of concept vendor patch advisory",
+      "sources": [
+        {
+          "title": "OpenSSL Vulnerabilities Threat Brief: CVE-2022-3786, CVE-2022-3602",
+          "url": "https://unit42.paloaltonetworks.com/openssl-vulnerabilities",
+          "snippet": "Palo Alto Networks recommends customers apply the latest patch, because both vulnerabilities have been shown to cause a denial of service at the very least. There is publicly available proof-of-concept code that will enable anyone who manages to create a malicious certificate and successfully sign it, to crash unpatched servers. [...] On November 1, 2022, OpenSSL released a security advisory describing two high severity vulnerabilities within the OpenSSL library (CVE-2022-3786 and CVE-2022-3602). OpenSSL versions from 3.0.0 - 3.0.6 are vulnerable, with 3.0.7 containing the patch for both vulnerabilities. OpenSSL 1.1.1 and 1.0.2 are not affected by this issue. [...] at the very least. There is also at least one publicly available proof of concept that will enable anyone who manages to create a malicious certificate, and successfully sign it, to crash unpatched servers."
+        },
+        {
+          "title": "RH-ISAC | OpenSSL Patches Two High Severity Vulnerabilities with Significant Barriers to Exploitation - RH-ISAC",
+          "url": "https://rhisac.org/threat-intelligence/openssl-high-severity-vulnerabilities",
+          "snippet": "On November 1, 2022, OpenSSL developers released details of two vulnerabilities: CVE-2022-3786 and CVE-2022-3602.\n\n## Context\n\nIn an accompanying blog post, OpenSSL explained that they downgraded the severity of the vulnerabilities to high from the originally announced critical level due to technical barriers to exploitation. No in the wild exploits or proofs of concept (POCs) are currently known.\n\n## Technical Details\n\nIn the vulnerability disclosure, the CVEs are detailed as follows: [...] CVE-2022-3786 (OpenSSL advisory) [HIGH severity] 01 November 2022: [...] Become a member\n\nMember Login\n\nRetail & Hospitality ISAC logo\n\nThreat Intelligence\n\n# OpenSSL Patches Two High Severity Vulnerabilities with Significant Barriers to Exploitation\n\n##### OpenSSL developers released details of two vulnerabilities, CVE-2022-3786 and CVE-2022-3602, which have been downgraded in severity.\n\nOpenSSL Patches Two High Severity Vulnerabilities with Significant Barriers to Exploitation\n\n Posted on\n Lee Clark, Cyber Threat Intelligence Analyst & Writer"
+        },
+        {
+          "title": "Attention: Atlassian's Response to the OpenSSLv3 Vulnerability - Announcements - The Atlassian Developer Community",
+          "url": "https://community.developer.atlassian.com/t/attention-atlassians-response-to-the-opensslv3-vulnerability/63132",
+          "snippet": "# Attention: Atlassian's Response to the OpenSSLv3 Vulnerability\n\nOn November 1, 2022, OpenSSL published a security advisory detailing high severity vulnerabilities in version 3.x of their library, also known as CVE-2022-3602 and CVE-2022-3786. Atlassian kicked off the incident management process to assess the impact of this vulnerability across the Atlassian products, platform and ecosystem."
+        },
+        {
+          "title": "Analysis of OpenSSL CVE-2022-3786 and CVE-2022-3602",
+          "url": "https://checkmarx.com/blog/analysis-of-openssl-cve-2022-3786-and-cve-2022-3602",
+          "snippet": "There is no PoC (proof of concept) available now. The exploitation requires either a malicious certificate signed by a trusted Certificate Authority, which is not trivial, or code that ignores the certificate chain validation error, which is possible but is not ubiquitous.\n\nThe OpenSSL team recommends updating to version 3.0.7, regardless of the issue severity change. [...] In short, CVE-2022-3786 affects TLS clients and servers and could result in a crash (Denial of Service). Exploitation seems complicated because it requires certain conditions.\n\nA buffer overrun can be triggered in X.509 certificate verification. To be specific, it happens in the name constraint check. An attacker can craft a malicious email address to overflow an arbitrary number of bytes containing the . (decimal 46) character on the stack."
+        },
+        {
+          "title": "Rapid7 Analysis: CVE-2022-3786",
+          "url": "https://www.rapid7.com/blog/post/ra-cve-2022-3786-analysis",
+          "snippet": "As long as tmpptr isn\u2019t NULL (meaning, we haven\u2019t reached the final label in the original string), it appends a period, even if result has been set to 0! That means that as long as there are Punycode-encoded labels to decode, we can keep adding periods. Note that the resulting string will look like it\u2019s the correct length. In our contrived PoC, we use the string \"a.b.c.d.e.f.g.h.i.j.k.l.m.n.o.p.xn--.xn--.xn--.xn--.xn--.xn--.xn--[...]\", which appears to truncate when viewed as a string: [...] CVE-2022-3786 is a parsing error in the ossl\\_a2ulabel function in punycode.c, where period characters (. or 0x2e) can be infinitely appended to a buffer, which typically leads to denial of service conditions (i.e., crashing the process by flooding it with periods). In rare cases, if a useful memory address is stored right after the buffer, and changing the last byte two of the address to 0x2e is useful, and nothing important gets overwritten in the process, a partial address overwrite (like [...] The diff for this issue is rather long, but let\u2019s take a look at the vulnerable code to see what\u2019s going on! A brief proof of concept that demonstrates the issue by directly calling the vulnerable function can be found in our Github repo, which overwrites the return address with 0x2e bytes. We\u2019ll use that in our examples below, but note that it\u2019s a very contrived example. The only known path to real-world exploitation is through the certificate-validation function, which requires a signed and"
+        }
+      ],
+      "assessment": {
+        "exploited_in_the_wild": "no",
+        "public_exploit_code": "unclear",
+        "vendor_fix_available": "yes",
+        "summary": "CVE-2022-3786 is a buffer overrun in OpenSSL\u2019s X.509 parser affecting versions 3.0.0\u20113.0.6, fixed in 3.0.7 [1]. No in\u2011the\u2011wild exploitation is known [2], while reports on public PoC code conflict [1] [2] [4]."
+      },
+      "tavily_credits": 1
+    }
+  },
+  "usage": {
+    "nemotron_calls": 8,
+    "tokens": 16883,
+    "est_cost_usd": 0.010066
+  },
+  "duration_s": 88.0,
+  "human_review_s": 0.0
+}

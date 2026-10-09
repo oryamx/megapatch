@@ -1,6 +1,4 @@
-openai>=1.50
-python-dotenv>=1.0
+# Lean set: enough for judge_check.py, scorerisk.py, sensitivity.py and the dashboard.
 flask>=3.0
 pytest>=8.0
-contree-sdk>=0.3.6
 streamlit>=1.40

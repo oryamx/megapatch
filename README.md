@@ -49,7 +49,8 @@ python sensitivity.py   # does the ranking survive different weights?
 **3. Run the full pipeline** (needs a Nebius Token Factory account, API key and Sandboxes access):
 
 ```bash
-cp .env.example .env    # then fill NEBIUS_API_KEY and NEBIUS_PROJECT_ID
+pip install -r requirements-pipeline.txt
+cp .env.example .env    # then fill NEBIUS_API_KEY and NEBIUS_PROJECT_ID (TAVILY_API_KEY is optional)
 python megapatch.py
 ```
 
@@ -69,6 +70,8 @@ The dashboard shows the prioritized queue, the before/after proof for each patch
 - **Fictional:** the inventory in `data/findings.json` (a made-up project called demo-shop) and the exposure of its assets. Weights and constants in `scorerisk.py` are starting points, not validated values; `sensitivity.py` checks which conclusions depend on them.
 - **Verifiable in the MVP:** only the three vulnerability classes of our own practice app (`target_app/`). Other findings are ranked but reported as `NOT_VERIFIABLE`, never as safe.
 - **Not measured yet:** we do not claim any precision figure for the ranking.
+- **The public-evidence step is not reproducible run to run.** Web results and the model's summary can change between runs (we observed it). That is why it never enters the score; each run stores the sources and the summary it saw.
+- **The judge only judges what the tests cover.** A patch can pass the PoC and the tests and still differ in behavior outside them.
 
 ## Data sources and attribution
 

@@ -205,7 +205,8 @@ with tab_evidence:
     st.markdown(
         "What execution cannot verify (no PoC for that class) is backed with **public evidence**: "
         "Tavily searches the web at runtime and Nemotron summarizes only what the sources support. "
-        "This never changes the ScoreRisk number."
+        "This never changes the ScoreRisk number. Web results and summaries can differ between runs, "
+        "which is exactly why this evidence is shown next to the score and never inside it."
     )
     enrichment = (run or {}).get("enrichment") or {}
     if not enrichment:
