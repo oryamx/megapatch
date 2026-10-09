@@ -1,0 +1,15 @@
+{
+  "configurations_tested": 216,
+  "F-11 (CVSS 9.8, rarely exploited) ranks below F-04 (CVSS 7.5, in KEV)": 1.0,
+  "F-11 stays outside the top 8": 1.0,
+  "internet-facing KEV findings F-01, F-03, F-04 all in the top 4": 1.0,
+  "our 3 code findings F-12, F-13, F-14 all inside the top 8": 1.0,
+  "F-12 rank range (min, max)": [
+    4,
+    6
+  ],
+  "F-14 rank range (min, max)": [
+    6,
+    8
+  ]
+}
