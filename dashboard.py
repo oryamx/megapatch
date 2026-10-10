@@ -44,8 +44,17 @@ def status_label(raw):
     return raw
 
 
-@st.cache_data
-def load():
+def run_signature():
+    """Cache key: changes whenever the evidence file changes, so a new deploy shows new data."""
+    path = latest_run_path()
+    if path is None:
+        return None
+    stat = path.stat()
+    return (str(path), stat.st_mtime_ns, stat.st_size)
+
+
+@st.cache_data(ttl=600)
+def load(signature):
     ranked, threat = score_all()
     path = latest_run_path()
     run = json.loads(path.read_text(encoding="utf-8")) if path else None
@@ -54,7 +63,7 @@ def load():
     return ranked, threat, run, path, sens
 
 
-ranked, threat, run, run_path, sensitivity = load()
+ranked, threat, run, run_path, sensitivity = load(run_signature())
 by_id = {r["id"]: r for r in ranked}
 
 st.title("MegaPatch")
