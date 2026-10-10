@@ -3,7 +3,7 @@
 This is NOT CISA's SSVC decision tree. CISA's outcomes are Track, Track*, Attend
 and Act; we borrow those four names for a small rule table over the signals this
 project actually has. Asset exposure is DECLARED in the practice inventory
-(data/findings.json), not discovered, so a band is only as good as those inputs.
+(data/assets.json), not discovered, so a band is only as good as those inputs.
 
 Every band comes with its basis, so a reader can see why it was assigned.
 """

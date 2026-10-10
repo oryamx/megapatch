@@ -17,8 +17,10 @@ def main():
     app_dir = sys.argv[1] if len(sys.argv) > 1 else "target_app"
     client = load_app(app_dir).test_client()
 
-    normal = client.get("/users/search", query_string={"name": "alice"}).get_json()
-    attack = client.get("/users/search", query_string={"name": PAYLOAD}).get_json()
+    # `or {}`: a patched app that removed the route returns no JSON; that must read as BROKEN,
+    # not crash (a crash exits with 1, which would be mistaken for VULNERABLE).
+    normal = client.get("/users/search", query_string={"name": "alice"}).get_json() or {}
+    attack = client.get("/users/search", query_string={"name": PAYLOAD}).get_json() or {}
     normal_rows = normal.get("users", [])
     attack_rows = attack.get("users", [])
 

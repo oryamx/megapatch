@@ -1,0 +1,27 @@
+{
+  "_note": "DECLARED context for a FICTIONAL practice project. Which assets exist, how exposed they are, and which package or file belongs to which asset are our assumptions; the scanner output in scans/ is real.",
+  "assets": {
+    "demo-web": {"internet_facing": true, "requires_auth": false, "environment": "production", "sensitive_data": true},
+    "ci-tooling": {"internet_facing": false, "requires_auth": true, "environment": "internal", "sensitive_data": false}
+  },
+  "package_to_asset": {
+    "flask": "demo-web",
+    "werkzeug": "demo-web",
+    "jinja2": "demo-web",
+    "pillow": "demo-web",
+    "requests": "ci-tooling",
+    "urllib3": "ci-tooling",
+    "certifi": "ci-tooling",
+    "pyyaml": "ci-tooling",
+    "cryptography": "ci-tooling"
+  },
+  "code_asset": "demo-web",
+  "code_cvss": {
+    "CWE-89": {"score": 9.8, "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/C:H/I:H/A:H", "basis": "self-assessed"},
+    "CWE-78": {"score": 9.8, "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/C:H/I:H/A:H", "basis": "self-assessed"},
+    "CWE-22": {"score": 7.5, "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/C:H/I:N/A:N", "basis": "self-assessed"}
+  },
+  "manual_findings": [
+    {"cwe": "CWE-22", "note": "found in manual review; Bandit did not flag it"}
+  ]
+}

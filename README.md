@@ -10,11 +10,15 @@ Built for the Nebius x NVIDIA Global AI Hackathon 2026 (track: Coding and Agenti
 
 ## The idea
 
-A scanner gives you thousands of findings, all with a CVSS score, so everything looks critical. MegaPatch does three things in one flow:
+A scanner gives you a long list of findings, all with a CVSS score, so everything looks critical. In our demo, pip-audit reported 124 entries on nine deliberately outdated pinned Python packages (69 distinct advisories, 62 distinct CVEs; the scanner lists some advisories twice); only one of those CVEs is in CISA's KEV catalog. MegaPatch does three things in one flow:
 
-1. **Prioritize with exploitation data, not severity alone.** ScoreRisk is a deterministic rule (not a model): `100 * (0.50*E + 0.30*X + 0.20*S)` where E is exploitability (EPSS, CISA KEV), X is the exposure of the asset, and S is the CVSS base score. A CVSS 9.8 that nobody exploits ranks below a CVSS 7.5 that is in KEV and internet-facing.
+1. **Prioritize with exploitation data, not severity alone.** ScoreRisk is a deterministic rule (not a model): `100 * (0.50*E + 0.30*X + 0.20*S)` where E is exploitability (EPSS, CISA KEV), X is the exposure of the asset, and S is the CVSS base score. A CVSS 9.8 that is almost never exploited ranks below a lower-CVSS finding that is in KEV and internet-facing.
 2. **Verify by execution.** The top findings go to an isolated Nebius Sandbox where a proof-of-concept exploit runs. The result is a verdict (`CONFIRMED`, `NOT_REPRODUCIBLE`, or `NOT_VERIFIABLE` for classes without a PoC), not an opinion.
-3. **Patch and re-test.** Nemotron writes the fix. The **same** exploit and the functional tests judge it. The model proposes; the exploit and the tests decide. A human approves before any model-written code runs.
+3. **Patch and re-test.** Nemotron writes the fix. The **same** exploit and the functional tests judge it. If the judge rejects a patch, its output goes back to the model for one repair attempt. The model proposes; the exploit and the tests decide.
+
+Model-written code runs only inside the isolated Nebius sandbox (we place no secrets in it; what it can and cannot reach is documented under "Safety and scope"), so it runs automatically. **A human approves each verified patch before it is exported** (`out/patches/*.diff`). With `--local`, which runs the judge on your own machine, the human approves before anything runs.
+
+Input is real scanner output: **pip-audit** (software composition analysis) over `scans/requirements.txt` and **Bandit** (static analysis) over our practice app, parsed by `ingest.py`. The scanner outputs are frozen in `scans/` so results are reproducible.
 
 ## Where Nebius and NVIDIA are used
 
@@ -56,7 +60,7 @@ cp .env.example .env    # then fill NEBIUS_API_KEY and NEBIUS_PROJECT_ID (TAVILY
 python megapatch.py
 ```
 
-The pipeline ranks the findings, verifies the top 8 in the sandbox, asks Nemotron for a patch for each confirmed one, shows you the diff, and, after you approve, judges it in the sandbox. Output goes to `evidence/run_<timestamp>.json`. Useful flags: `--top N`, `--yes`, `--eval-only`, `--local`, `--no-enrich`.
+The pipeline ranks the findings, verifies the top 8 in the sandbox, asks Nemotron for a patch for each confirmed one, judges it in the sandbox (model-written code runs only there), repairs a rejected patch once, and then asks you to approve each **verified** patch before it is exported to `out/patches/`. Output goes to `evidence/run_<timestamp>.json`. Useful flags: `--top N`, `--yes`, `--eval-only`, `--local`, `--no-enrich`.
 
 **4. Look at the result** in a browser:
 
@@ -64,7 +68,9 @@ The pipeline ranks the findings, verifies the top 8 in the sandbox, asks Nemotro
 streamlit run dashboard.py
 ```
 
-The dashboard shows the prioritized queue, the before/after proof for each patch, the public evidence for findings that execution cannot verify, and why the order is what it is. It reads the latest file in `evidence/` and needs no credentials.
+The dashboard shows the prioritized queue, the before/after proof for each patch, the public evidence for findings that execution cannot verify, and why the order is what it is. It needs no credentials.
+
+The repository ships two recorded runs, selectable in the sidebar: `evidence/golden_run.json` (three patches accepted at the first attempt) and `evidence/run_with_repair.json` (one patch rejected by the judge, then repaired by Nemotron using the judge's output). **Both were made with `--yes`, i.e. automatic approval; neither shows a human approving a patch.** Runs made with the current code store a fingerprint (version 2) of the full findings, threat data, parameters and computed ranking they were made with, and the dashboard hides runs that do not match the current inputs. **`run_with_repair.json` is a legacy run**: it was recorded just before that fingerprint existed and carries a partial version-1 fingerprint, which covered the finding ids plus some metadata and parameters (the threat-data download date, the KEV catalog version, and the scoring weights and constants) but not the full findings, the full threat data or the computed ranking. It was not edited afterwards; instead the dashboard matches it by identical finding ids, labels it as legacy, and `python judge_check.py` verifies that its recorded ranks, scores and CVSS equal the current ranking.
 
 ## Action bands
 
@@ -77,16 +83,22 @@ Each finding gets a band named after CISA's SSVC outcomes (Act, Attend, Track\*,
 | Track\* | Internet-facing with no exploitation evidence |
 | Track | No strong signal |
 
-Every band shows its basis. Asset exposure is declared in the practice inventory, so a band for a finding that was not verified by execution (for example Log4Shell) is a reference case built from KEV/EPSS plus declared exposure, not a result of the run.
+Every band shows its basis. Asset exposure is declared in `data/assets.json`, so a band for a finding that was not verified by execution (for example the KEV-listed libwebp issue reported through Pillow) is built from KEV/EPSS plus declared exposure, not from an exploit run.
 
 ## What the data is (and is not)
 
 - **Real:** CVE identifiers, EPSS (FIRST), CISA KEV membership and CVSS base scores (NVD), frozen in `data/threat_data.json` so results are reproducible. Refresh with `python fetch_threat_data.py`.
-- **Fictional:** the inventory in `data/findings.json` (a made-up project called demo-shop) and the exposure of its assets. Weights and constants in `scorerisk.py` are starting points, not validated values; `sensitivity.py` checks which conclusions depend on them.
+- **Real scanner output, deliberately chosen input:** pip-audit ran over nine pinned packages that we picked because they are old (so the scanner has a lot to say), and Bandit ran over our own practice app. Bandit flagged two of our three vulnerability classes; the path traversal was added from manual review and is labeled as such.
+- **Declared, fictional context:** which asset each package or file belongs to and how exposed that asset is (`data/assets.json`). Weights and constants in `scorerisk.py` are starting points, not validated values; `sensitivity.py` checks which conclusions depend on them (it varies the weights, not these declared inputs).
 - **Verifiable in the MVP:** only the three vulnerability classes of our own practice app (`target_app/`). Other findings are ranked but reported as `NOT_VERIFIABLE`, never as safe.
 - **Not measured yet:** we do not claim any precision figure for the ranking.
 - **The public-evidence step is not reproducible run to run.** Web results and the model's summary can change between runs (we observed it). That is why it never enters the score; each run stores the sources and the summary it saw.
-- **The judge only judges what the tests cover.** A patch can pass the PoC and the tests and still differ in behavior outside them.
+- **The judge only judges what the tests cover.** A patch can pass the PoC and the tests and still differ in behavior outside them. For example, a "fix" that blacklists the exact payload used by the PoC would pass it; the PoC tests one payload per class, not every payload.
+- **Exploitability uses EPSS and CISA KEV only.** "A public exploit exists" is not a separate signal in the score. The sandbox PoC covers that question for the findings we can execute.
+- **Scanner outputs are frozen fixtures.** `ingest.py` parses real pip-audit and Bandit JSON, but the pipeline does not run the scanners itself nor clone a repository. Refresh the fixtures with `pip-audit -r scans/requirements.txt --no-deps --disable-pip -f json -o scans/pip_audit.json` and `bandit -r target_app -f json -o scans/bandit.json`, then `python fetch_threat_data.py`.
+- **The PoCs call the app in-process** through Flask's test client. They show that the code executes the payload and that a patch blocks it; they do not test network reachability, and `NOT_REACHABLE` is not implemented.
+- **The safety guarantees apply to the default path.** `--yes` skips every human approval question and `--local` runs the judge on the developer's machine instead of an isolated sandbox. Both exist for development and offline checks; every recorded run is labeled with how it was approved (`approval` in `evidence/*.json`). The recorded demo run was made with `--yes`.
+- **Sandbox runs from one checkpoint, but patches do not compete yet.** Dependencies are installed once and every judge run starts from that checkpoint; we generate one candidate per finding (plus one repair attempt), not several competing candidates.
 
 ## Data sources and attribution
 
@@ -101,9 +113,18 @@ Developed during the hackathon submission period (the code in this repository wa
 ## Safety and scope
 
 - Everything runs against applications built for practice and prepared by the team, in an isolated sandbox.
-- No third-party systems, repositories or accounts are touched.
+- Exploits and PoCs only ever target the bundled practice app. No third-party system, repository or account is attacked or scanned.
+- External services the project does call: Nebius Token Factory and Sandboxes (inference and execution); Tavily (web search, optional); and, only when refreshing data, CISA KEV, FIRST EPSS, the NVD API, and PyPI/OSV during the scanner runs. `isolation_check.py` additionally opens one TCP connection to `pypi.org:443` (a host `pip` already uses) and sends no application data, only to observe whether outbound traffic is possible.
 - No real credentials inside the sandbox; the practice app only contains fake secrets.
-- A human approves before any model-written code is executed.
+- Model-written code runs only inside the isolated Nebius sandbox. In `--local` mode it would run on your machine, so there a human approves **before** it runs.
+- A human approves each **verified** patch before it is exported.
+- What was observed inside the sandbox (`python isolation_check.py` writes `evidence/isolation_check.json`; these are observations, not guarantees):
+  - its environment variables are the base image's own, with no Nebius or Tavily variables; we pass no secrets into it;
+  - its working directory contains only the files we upload;
+  - we looked for the developer's drives at `/c`, `/mnt` and `/host` and found nothing there; the sandbox's root filesystem is a `virtiofs` mount supplied by Nebius's infrastructure. That is a statement about the paths we checked, not proof about the platform's internal isolation;
+  - **outbound network is not blocked** (one TCP connect to `pypi.org:443` succeeded; the sandbox needs it for `pip`) and code runs as root inside the sandbox.
+
+  So "isolation" here means "nothing sensitive is placed in it and it is not our machine", not "it cannot reach the internet".
 - Defensive security lab: the goal is to shorten the time between finding and fixing, not to enable attacks. The PoCs only target the bundled practice app and only echo a marker or read its own fake file.
 
 ## License

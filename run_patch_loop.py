@@ -1,11 +1,18 @@
 """Patch loop: Nemotron writes a patch, then the SAME PoC and tests judge it.
 
+Where the human sits:
+- Sandbox (default): model-written code runs only inside the isolated Nebius sandbox,
+  which holds no secrets and touches nothing real, so it runs automatically. A human
+  approves the VERIFIED patch before it is exported (the real effect).
+- --local: the judge runs on this machine, so a human approves BEFORE it runs.
+- --yes skips every question (development only; the evidence labels it).
+
 If the judge rejects a patch, Nemotron gets the judge's output and tries once more
-(MAX_ATTEMPTS). A human approves every candidate before it runs.
+(MAX_ATTEMPTS).
 
 Usage:
-  python run_patch_loop.py [--cwe CWE-89]   generate a patch, show diff, ask approval, judge it in the Nebius sandbox
-  python run_patch_loop.py --yes            same, without the approval question
+  python run_patch_loop.py [--cwe CWE-89]   generate, judge in the Nebius sandbox, ask to export
+  python run_patch_loop.py --yes            same, without questions
   python run_patch_loop.py --eval-only      skip the model, judge the existing candidate
   python run_patch_loop.py --local          judge on this machine instead (no sandbox credentials needed)
 
@@ -26,7 +33,9 @@ from llm import chat
 
 TARGET = Path("target_app")
 CANDIDATES = Path("candidates")
+EXPORTS = Path("out") / "patches"
 MAX_ATTEMPTS = 2
+LOCAL_LABEL = "THIS machine"
 
 SYSTEM = (
     "You are a senior application security engineer. "
@@ -85,7 +94,7 @@ def judge_local(app_dir, poc, run_tests=True):
 
 def choose_judge(local):
     if local:
-        return judge_local, "THIS machine"
+        return judge_local, LOCAL_LABEL
     from sandbox_judge import judge_in_sandbox  # imported here so --local needs no sandbox credentials
 
     return judge_in_sandbox, "the Nebius sandbox"
@@ -135,15 +144,24 @@ def diff_text(cwe):
     return "".join(difflib.unified_diff(old, new, "target_app/app.py", f"candidates/{cwe}/app.py"))
 
 
+def ask(question):
+    """One yes/no question to a human. Returns (answer_is_yes, seconds_waited)."""
+    asked_at = time.time()
+    answer = input(question)
+    return answer.strip().lower() == "y", time.time() - asked_at
+
+
 def patch_cycle(judge, where, cwe, evidence, auto_yes=False, generate=True, prepared=False):
-    """Generate, show the diff, ask a human, judge; on rejection repair once.
+    """Generate, judge in the sandbox, repair once on rejection, ask a human to export.
 
     `prepared=True` means the first candidate was already generated (in parallel).
     Returns a result dict describing the last attempt, plus the earlier ones.
     """
     cand = candidate_dir(cwe)
+    sandboxed = where != LOCAL_LABEL
     max_attempts = MAX_ATTEMPTS if generate else 1
     attempts, feedback, human_wait = [], None, 0.0
+    exported, export_path = False, None
 
     for attempt in range(1, max_attempts + 1):
         if generate and not (attempt == 1 and prepared):
@@ -155,12 +173,11 @@ def patch_cycle(judge, where, cwe, evidence, auto_yes=False, generate=True, prep
         print(f"\n=== PROPOSED PATCH, attempt {attempt} (diff) ===")
         print(diff)
 
-        if not auto_yes:
-            # The patch is model-written code: a human looks before anything runs.
-            asked_at = time.time()
-            answer = input(f"Run this candidate against the PoC and tests in {where}? [y/N] ")
-            human_wait += time.time() - asked_at
-            if answer.strip().lower() != "y":
+        if not sandboxed and not auto_yes:
+            # Model-written code is about to run on THIS machine: a human looks first.
+            ok, waited = ask(f"Run this candidate against the PoC and tests on {where}? [y/N] ")
+            human_wait += waited
+            if not ok:
                 print("Not run. Nothing was executed.")
                 attempts.append({"attempt": attempt, "approved": False, "accepted": False, "diff": diff})
                 break
@@ -188,19 +205,41 @@ def patch_cycle(judge, where, cwe, evidence, auto_yes=False, generate=True, prep
             print("Rejected: asking Nemotron to repair it with the judge's output.")
 
     last = attempts[-1]
+    if last.get("accepted"):
+        if auto_yes:
+            exported = True
+        else:
+            exported, waited = ask("Export this VERIFIED patch (write the diff to out/patches/)? [y/N] ")
+            human_wait += waited
+        if exported:
+            EXPORTS.mkdir(parents=True, exist_ok=True)
+            export_path = str(EXPORTS / f"{cwe}.diff")
+            Path(export_path).write_text(last["diff"], encoding="utf-8")
+            print(f"Exported {export_path}")
+        else:
+            print("Not exported. The verified patch stays in the evidence only.")
+
+    if auto_yes:
+        approval = "auto (--yes)"
+    elif sandboxed:
+        approval = "human, on the verified patch (the sandbox ran it automatically)"
+    else:
+        approval = "human, before running on this machine and before export"
     return {
         **last,
         "attempts": len(attempts),
         "attempt_history": attempts[:-1],
         "human_wait_s": human_wait,
-        "approval": "auto (--yes)" if auto_yes else "human",
+        "approval": approval,
+        "exported": exported,
+        "export_path": export_path,
     }
 
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--cwe", default="CWE-89", choices=sorted(CLASSES))
-    parser.add_argument("--yes", action="store_true", help="skip the approval question")
+    parser.add_argument("--yes", action="store_true", help="skip every question")
     parser.add_argument("--eval-only", action="store_true", help="do not call the model")
     parser.add_argument("--local", action="store_true", help="judge on this machine, not in the sandbox")
     args = parser.parse_args()
@@ -215,7 +254,7 @@ def main():
             sys.exit(f"Nothing to fix: the PoC did not fire on {TARGET} (exit {poc_code}).\n{evidence}")
 
     result = patch_cycle(judge, where, args.cwe, evidence, auto_yes=args.yes, generate=not args.eval_only)
-    sys.exit(0 if result["accepted"] else 1)
+    sys.exit(0 if result["accepted"] and result["exported"] else 1)
 
 
 if __name__ == "__main__":

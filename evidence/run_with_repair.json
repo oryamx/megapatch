@@ -1,0 +1,837 @@
+{
+  "run_at": "20261010T024045Z",
+  "executor": "the Nebius sandbox",
+  "top_n": 8,
+  "model": "nvidia/nemotron-3-super-120b-a12b",
+  "inventory_fingerprint": "b4169faaab7f3384",
+  "final_order": [
+    {
+      "position": 1,
+      "id": "bandit:CWE-78",
+      "scorerisk_rank": 2,
+      "pre_score": 64.6,
+      "cvss": 9.8,
+      "status": "CONFIRMED -> PATCHED, same PoC now fails"
+    },
+    {
+      "position": 2,
+      "id": "bandit:CWE-89",
+      "scorerisk_rank": 3,
+      "pre_score": 64.6,
+      "cvss": 9.8,
+      "status": "CONFIRMED -> PATCHED, same PoC now fails"
+    },
+    {
+      "position": 3,
+      "id": "manual:CWE-22",
+      "scorerisk_rank": 4,
+      "pre_score": 60.0,
+      "cvss": 7.5,
+      "status": "CONFIRMED -> PATCHED, same PoC now fails (after 2 attempts)"
+    },
+    {
+      "position": 4,
+      "id": "pillow:PYSEC-2026-1794",
+      "scorerisk_rank": 1,
+      "pre_score": 97.6,
+      "cvss": 8.8,
+      "status": "NOT_VERIFIABLE"
+    },
+    {
+      "position": 5,
+      "id": "pillow:PYSEC-2023-175",
+      "scorerisk_rank": 5,
+      "pre_score": 55.0,
+      "cvss": null,
+      "status": "NOT_VERIFIABLE"
+    },
+    {
+      "position": 6,
+      "id": "pillow:PYSEC-2026-3493",
+      "scorerisk_rank": 6,
+      "pre_score": 48.5,
+      "cvss": 9.1,
+      "status": "NOT_VERIFIABLE"
+    },
+    {
+      "position": 7,
+      "id": "jinja2:PYSEC-2026-1471",
+      "scorerisk_rank": 7,
+      "pre_score": 47.9,
+      "cvss": 8.8,
+      "status": "NOT_VERIFIABLE"
+    },
+    {
+      "position": 8,
+      "id": "jinja2:PYSEC-2026-1472",
+      "scorerisk_rank": 8,
+      "pre_score": 47.8,
+      "cvss": 8.8,
+      "status": "NOT_VERIFIABLE"
+    },
+    {
+      "position": 9,
+      "id": "pillow:PYSEC-2026-457",
+      "scorerisk_rank": 9,
+      "pre_score": 47.1,
+      "cvss": 8.1,
+      "status": "not verified (outside top N)"
+    },
+    {
+      "position": 10,
+      "id": "werkzeug:PYSEC-2026-2043",
+      "scorerisk_rank": 10,
+      "pre_score": 46.7,
+      "cvss": 7.5,
+      "status": "not verified (outside top N)"
+    },
+    {
+      "position": 11,
+      "id": "pillow:PYSEC-2026-3454",
+      "scorerisk_rank": 11,
+      "pre_score": 46.6,
+      "cvss": 8.2,
+      "status": "not verified (outside top N)"
+    },
+    {
+      "position": 12,
+      "id": "jinja2:PYSEC-2026-1475",
+      "scorerisk_rank": 12,
+      "pre_score": 45.9,
+      "cvss": 7.8,
+      "status": "not verified (outside top N)"
+    },
+    {
+      "position": 13,
+      "id": "werkzeug:PYSEC-2023-58",
+      "scorerisk_rank": 13,
+      "pre_score": 45.7,
+      "cvss": 7.5,
+      "status": "not verified (outside top N)"
+    },
+    {
+      "position": 14,
+      "id": "flask:PYSEC-2023-62",
+      "scorerisk_rank": 14,
+      "pre_score": 45.6,
+      "cvss": 7.5,
+      "status": "not verified (outside top N)"
+    },
+    {
+      "position": 15,
+      "id": "pillow:PYSEC-2023-227",
+      "scorerisk_rank": 15,
+      "pre_score": 45.6,
+      "cvss": 7.5,
+      "status": "not verified (outside top N)"
+    },
+    {
+      "position": 16,
+      "id": "werkzeug:PYSEC-2023-221",
+      "scorerisk_rank": 16,
+      "pre_score": 45.5,
+      "cvss": 7.5,
+      "status": "not verified (outside top N)"
+    },
+    {
+      "position": 17,
+      "id": "werkzeug:PYSEC-2026-1860",
+      "scorerisk_rank": 17,
+      "pre_score": 45.5,
+      "cvss": 7.5,
+      "status": "not verified (outside top N)"
+    },
+    {
+      "position": 18,
+      "id": "werkzeug:PYSEC-2026-3417",
+      "scorerisk_rank": 18,
+      "pre_score": 45.5,
+      "cvss": 7.5,
+      "status": "not verified (outside top N)"
+    },
+    {
+      "position": 19,
+      "id": "pillow:PYSEC-2026-2253",
+      "scorerisk_rank": 19,
+      "pre_score": 45.2,
+      "cvss": 7.5,
+      "status": "not verified (outside top N)"
+    },
+    {
+      "position": 20,
+      "id": "pillow:PYSEC-2026-2254",
+      "scorerisk_rank": 20,
+      "pre_score": 45.2,
+      "cvss": 7.5,
+      "status": "not verified (outside top N)"
+    },
+    {
+      "position": 21,
+      "id": "pillow:PYSEC-2026-2255",
+      "scorerisk_rank": 21,
+      "pre_score": 45.2,
+      "cvss": 7.5,
+      "status": "not verified (outside top N)"
+    },
+    {
+      "position": 22,
+      "id": "pillow:PYSEC-2026-2256",
+      "scorerisk_rank": 22,
+      "pre_score": 45.2,
+      "cvss": 7.5,
+      "status": "not verified (outside top N)"
+    },
+    {
+      "position": 23,
+      "id": "pillow:PYSEC-2026-3451",
+      "scorerisk_rank": 23,
+      "pre_score": 45.2,
+      "cvss": 7.5,
+      "status": "not verified (outside top N)"
+    },
+    {
+      "position": 24,
+      "id": "pillow:PYSEC-2026-3453",
+      "scorerisk_rank": 24,
+      "pre_score": 45.2,
+      "cvss": 7.5,
+      "status": "not verified (outside top N)"
+    },
+    {
+      "position": 25,
+      "id": "pillow:PYSEC-2026-3494",
+      "scorerisk_rank": 25,
+      "pre_score": 45.2,
+      "cvss": 7.5,
+      "status": "not verified (outside top N)"
+    },
+    {
+      "position": 26,
+      "id": "pillow:PYSEC-2026-3495",
+      "scorerisk_rank": 26,
+      "pre_score": 45.2,
+      "cvss": 7.5,
+      "status": "not verified (outside top N)"
+    },
+    {
+      "position": 27,
+      "id": "pillow:PYSEC-2026-3496",
+      "scorerisk_rank": 27,
+      "pre_score": 45.2,
+      "cvss": 7.5,
+      "status": "not verified (outside top N)"
+    },
+    {
+      "position": 28,
+      "id": "cryptography:PYSEC-2026-800",
+      "scorerisk_rank": 28,
+      "pre_score": 44.6,
+      "cvss": 7.4,
+      "status": "not verified (outside top N)"
+    },
+    {
+      "position": 29,
+      "id": "jinja2:PYSEC-2026-1473",
+      "scorerisk_rank": 29,
+      "pre_score": 42.6,
+      "cvss": 6.1,
+      "status": "not verified (outside top N)"
+    },
+    {
+      "position": 30,
+      "id": "pillow:PYSEC-2026-1793",
+      "scorerisk_rank": 30,
+      "pre_score": 42.3,
+      "cvss": 5.9,
+      "status": "not verified (outside top N)"
+    },
+    {
+      "position": 31,
+      "id": "jinja2:PYSEC-2026-1474",
+      "scorerisk_rank": 31,
+      "pre_score": 41.3,
+      "cvss": 5.4,
+      "status": "not verified (outside top N)"
+    },
+    {
+      "position": 32,
+      "id": "pillow:PYSEC-2026-165",
+      "scorerisk_rank": 32,
+      "pre_score": 41.1,
+      "cvss": 5.5,
+      "status": "not verified (outside top N)"
+    },
+    {
+      "position": 33,
+      "id": "pillow:PYSEC-2026-2874",
+      "scorerisk_rank": 33,
+      "pre_score": 41.1,
+      "cvss": 5.5,
+      "status": "not verified (outside top N)"
+    },
+    {
+      "position": 34,
+      "id": "werkzeug:PYSEC-2026-2045",
+      "scorerisk_rank": 34,
+      "pre_score": 41.0,
+      "cvss": 5.3,
+      "status": "not verified (outside top N)"
+    },
+    {
+      "position": 35,
+      "id": "werkzeug:PYSEC-2026-2046",
+      "scorerisk_rank": 35,
+      "pre_score": 40.9,
+      "cvss": 5.3,
+      "status": "not verified (outside top N)"
+    },
+    {
+      "position": 36,
+      "id": "werkzeug:PYSEC-2026-2320",
+      "scorerisk_rank": 36,
+      "pre_score": 40.9,
+      "cvss": 5.3,
+      "status": "not verified (outside top N)"
+    },
+    {
+      "position": 37,
+      "id": "werkzeug:PYSEC-2026-2044",
+      "scorerisk_rank": 37,
+      "pre_score": 40.8,
+      "cvss": 5.3,
+      "status": "not verified (outside top N)"
+    },
+    {
+      "position": 38,
+      "id": "werkzeug:CVE-2026-102598",
+      "scorerisk_rank": 38,
+      "pre_score": 40.2,
+      "cvss": null,
+      "status": "not verified (outside top N)"
+    },
+    {
+      "position": 39,
+      "id": "pillow:PYSEC-2026-2257",
+      "scorerisk_rank": 39,
+      "pre_score": 39.1,
+      "cvss": 4.5,
+      "status": "not verified (outside top N)"
+    },
+    {
+      "position": 40,
+      "id": "flask:PYSEC-2026-2151",
+      "scorerisk_rank": 40,
+      "pre_score": 38.8,
+      "cvss": 4.3,
+      "status": "not verified (outside top N)"
+    },
+    {
+      "position": 41,
+      "id": "werkzeug:PYSEC-2023-57",
+      "scorerisk_rank": 41,
+      "pre_score": 37.3,
+      "cvss": 3.5,
+      "status": "not verified (outside top N)"
+    },
+    {
+      "position": 42,
+      "id": "cryptography:GHSA-537c-gmf6-5ccf",
+      "scorerisk_rank": 42,
+      "pre_score": 25.0,
+      "cvss": null,
+      "status": "not verified (outside top N)"
+    },
+    {
+      "position": 43,
+      "id": "cryptography:GHSA-5cpq-8wj7-hf2v",
+      "scorerisk_rank": 43,
+      "pre_score": 25.0,
+      "cvss": null,
+      "status": "not verified (outside top N)"
+    },
+    {
+      "position": 44,
+      "id": "cryptography:GHSA-h4gh-qq45-vh27",
+      "scorerisk_rank": 44,
+      "pre_score": 25.0,
+      "cvss": null,
+      "status": "not verified (outside top N)"
+    },
+    {
+      "position": 45,
+      "id": "cryptography:GHSA-jm77-qphf-c4w8",
+      "scorerisk_rank": 45,
+      "pre_score": 25.0,
+      "cvss": null,
+      "status": "not verified (outside top N)"
+    },
+    {
+      "position": 46,
+      "id": "cryptography:GHSA-v8gr-m533-ghj9",
+      "scorerisk_rank": 46,
+      "pre_score": 25.0,
+      "cvss": null,
+      "status": "not verified (outside top N)"
+    },
+    {
+      "position": 47,
+      "id": "pyyaml:PYSEC-2021-142",
+      "scorerisk_rank": 47,
+      "pre_score": 22.6,
+      "cvss": 9.8,
+      "status": "not verified (outside top N)"
+    },
+    {
+      "position": 48,
+      "id": "certifi:PYSEC-2023-135",
+      "scorerisk_rank": 48,
+      "pre_score": 19.9,
+      "cvss": 9.8,
+      "status": "not verified (outside top N)"
+    },
+    {
+      "position": 49,
+      "id": "urllib3:PYSEC-2023-192",
+      "scorerisk_rank": 49,
+      "pre_score": 16.9,
+      "cvss": 8.1,
+      "status": "not verified (outside top N)"
+    },
+    {
+      "position": 50,
+      "id": "urllib3:PYSEC-2026-1996",
+      "scorerisk_rank": 50,
+      "pre_score": 16.5,
+      "cvss": 7.5,
+      "status": "not verified (outside top N)"
+    },
+    {
+      "position": 51,
+      "id": "cryptography:PYSEC-2026-1283",
+      "scorerisk_rank": 51,
+      "pre_score": 15.6,
+      "cvss": 7.5,
+      "status": "not verified (outside top N)"
+    },
+    {
+      "position": 52,
+      "id": "certifi:PYSEC-2024-230",
+      "scorerisk_rank": 52,
+      "pre_score": 15.5,
+      "cvss": 7.5,
+      "status": "not verified (outside top N)"
+    },
+    {
+      "position": 53,
+      "id": "cryptography:PYSEC-2023-254",
+      "scorerisk_rank": 53,
+      "pre_score": 15.5,
+      "cvss": 7.5,
+      "status": "not verified (outside top N)"
+    },
+    {
+      "position": 54,
+      "id": "cryptography:PYSEC-2024-225",
+      "scorerisk_rank": 54,
+      "pre_score": 15.4,
+      "cvss": 7.5,
+      "status": "not verified (outside top N)"
+    },
+    {
+      "position": 55,
+      "id": "urllib3:PYSEC-2026-1994",
+      "scorerisk_rank": 55,
+      "pre_score": 15.3,
+      "cvss": 7.5,
+      "status": "not verified (outside top N)"
+    },
+    {
+      "position": 56,
+      "id": "urllib3:PYSEC-2026-1998",
+      "scorerisk_rank": 56,
+      "pre_score": 15.3,
+      "cvss": 7.5,
+      "status": "not verified (outside top N)"
+    },
+    {
+      "position": 57,
+      "id": "cryptography:PYSEC-2023-11",
+      "scorerisk_rank": 57,
+      "pre_score": 13.7,
+      "cvss": 6.5,
+      "status": "not verified (outside top N)"
+    },
+    {
+      "position": 58,
+      "id": "requests:PYSEC-2023-74",
+      "scorerisk_rank": 58,
+      "pre_score": 13.7,
+      "cvss": 6.1,
+      "status": "not verified (outside top N)"
+    },
+    {
+      "position": 59,
+      "id": "urllib3:PYSEC-2026-1995",
+      "scorerisk_rank": 59,
+      "pre_score": 13.6,
+      "cvss": 6.5,
+      "status": "not verified (outside top N)"
+    },
+    {
+      "position": 60,
+      "id": "cryptography:PYSEC-2026-2141",
+      "scorerisk_rank": 60,
+      "pre_score": 13.2,
+      "cvss": 6.5,
+      "status": "not verified (outside top N)"
+    },
+    {
+      "position": 61,
+      "id": "cryptography:PYSEC-2026-1285",
+      "scorerisk_rank": 61,
+      "pre_score": 12.6,
+      "cvss": 5.5,
+      "status": "not verified (outside top N)"
+    },
+    {
+      "position": 62,
+      "id": "urllib3:PYSEC-2026-1999",
+      "scorerisk_rank": 62,
+      "pre_score": 12.4,
+      "cvss": 6.1,
+      "status": "not verified (outside top N)"
+    },
+    {
+      "position": 63,
+      "id": "requests:PYSEC-2026-1873",
+      "scorerisk_rank": 63,
+      "pre_score": 11.4,
+      "cvss": 5.6,
+      "status": "not verified (outside top N)"
+    },
+    {
+      "position": 64,
+      "id": "requests:PYSEC-2026-1872",
+      "scorerisk_rank": 64,
+      "pre_score": 11.1,
+      "cvss": 5.3,
+      "status": "not verified (outside top N)"
+    },
+    {
+      "position": 65,
+      "id": "requests:PYSEC-2026-2275",
+      "scorerisk_rank": 65,
+      "pre_score": 11.1,
+      "cvss": 5.5,
+      "status": "not verified (outside top N)"
+    },
+    {
+      "position": 66,
+      "id": "urllib3:PYSEC-2026-141",
+      "scorerisk_rank": 66,
+      "pre_score": 10.8,
+      "cvss": 5.3,
+      "status": "not verified (outside top N)"
+    },
+    {
+      "position": 67,
+      "id": "cryptography:PYSEC-2026-35",
+      "scorerisk_rank": 67,
+      "pre_score": 10.7,
+      "cvss": 5.3,
+      "status": "not verified (outside top N)"
+    },
+    {
+      "position": 68,
+      "id": "cryptography:PYSEC-2026-3554",
+      "scorerisk_rank": 68,
+      "pre_score": 10.2,
+      "cvss": null,
+      "status": "not verified (outside top N)"
+    },
+    {
+      "position": 69,
+      "id": "cryptography:PYSEC-2026-3553",
+      "scorerisk_rank": 69,
+      "pre_score": 10.1,
+      "cvss": null,
+      "status": "not verified (outside top N)"
+    },
+    {
+      "position": 70,
+      "id": "urllib3:PYSEC-2026-4175",
+      "scorerisk_rank": 70,
+      "pre_score": 10.1,
+      "cvss": null,
+      "status": "not verified (outside top N)"
+    },
+    {
+      "position": 71,
+      "id": "urllib3:PYSEC-2026-4177",
+      "scorerisk_rank": 71,
+      "pre_score": 10.1,
+      "cvss": null,
+      "status": "not verified (outside top N)"
+    },
+    {
+      "position": 72,
+      "id": "urllib3:PYSEC-2023-212",
+      "scorerisk_rank": 72,
+      "pre_score": 8.7,
+      "cvss": 4.2,
+      "status": "not verified (outside top N)"
+    }
+  ],
+  "verdicts": {
+    "pillow:PYSEC-2026-1794": {
+      "verdict": "NOT_VERIFIABLE",
+      "evidence": "no PoC for this class in the MVP"
+    },
+    "bandit:CWE-78": {
+      "verdict": "CONFIRMED",
+      "evidence": "app under test      : app_under_test\nnormal  'example.test' -> 'example.test'\npayload 'x && echo MARK_EXECUTED' -> lines ['x', 'MARK_EXECUTED']\nVULNERABLE: the injected command ran (marker printed on its own line)."
+    },
+    "bandit:CWE-89": {
+      "verdict": "CONFIRMED",
+      "evidence": "app under test      : app_under_test\nnormal  'alice'     -> 1 row(s)\npayload \"' OR '1'='1\" -> 3 row(s)\nVULNERABLE: the payload returned rows it should not."
+    },
+    "manual:CWE-22": {
+      "verdict": "CONFIRMED",
+      "evidence": "app under test      : app_under_test\nnormal  'readme.txt' -> 'Welcome to the demo app.'\npayload '../secret.txt' -> 'FAKE-SECRET-TOKEN-0000'\nVULNERABLE: a file outside the public folder was returned."
+    },
+    "pillow:PYSEC-2023-175": {
+      "verdict": "NOT_VERIFIABLE",
+      "evidence": "no PoC for this class in the MVP"
+    },
+    "pillow:PYSEC-2026-3493": {
+      "verdict": "NOT_VERIFIABLE",
+      "evidence": "no PoC for this class in the MVP"
+    },
+    "jinja2:PYSEC-2026-1471": {
+      "verdict": "NOT_VERIFIABLE",
+      "evidence": "no PoC for this class in the MVP"
+    },
+    "jinja2:PYSEC-2026-1472": {
+      "verdict": "NOT_VERIFIABLE",
+      "evidence": "no PoC for this class in the MVP"
+    }
+  },
+  "patches": {
+    "bandit:CWE-78": {
+      "attempt": 1,
+      "approved": true,
+      "accepted": true,
+      "diff": "--- target_app/app.py\n+++ candidates/CWE-78/app.py\n@@ -57,9 +57,9 @@\n     @app.get(\"/lookup\")\n     def lookup():\n         host = request.args.get(\"host\", \"\")\n-        # VULNERABLE (CWE-78): user input becomes part of a shell command line.\n-        cmd = f'\"{sys.executable}\" -c \"import sys; print(sys.argv[1])\" {host}'\n-        result = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=10)\n+        # FIXED: avoid shell=True, pass arguments as a list.\n+        args = [sys.executable, \"-c\", \"import sys; print(sys.argv[1])\", host]\n+        result = subprocess.run(args, capture_output=True, text=True, timeout=10)\n         return jsonify(output=result.stdout)\n \n     @app.get(\"/files\")\n",
+      "poc_exit": 0,
+      "poc_output": "app under test      : app_under_test\nnormal  'example.test' -> 'example.test'\npayload 'x && echo MARK_EXECUTED' -> lines ['x && echo MARK_EXECUTED']\nSAFE: the payload was treated as plain text.",
+      "tests_exit": 0,
+      "tests_output": "......                                                                   [100%]\n6 passed in 0.20s",
+      "attempts": 1,
+      "attempt_history": [],
+      "human_wait_s": 0.0,
+      "approval": "auto (--yes)",
+      "exported": true,
+      "export_path": "out\\patches\\CWE-78.diff"
+    },
+    "bandit:CWE-89": {
+      "attempt": 1,
+      "approved": true,
+      "accepted": true,
+      "diff": "--- target_app/app.py\n+++ candidates/CWE-89/app.py\n@@ -44,10 +44,10 @@\n     @app.get(\"/users/search\")\n     def search_users():\n         name = request.args.get(\"name\", \"\")\n-        # VULNERABLE (CWE-89): user input is concatenated straight into the SQL string.\n-        query = f\"SELECT id, username, email FROM users WHERE username = '{name}'\"\n+        # FIXED: use parameterized query to avoid SQL injection.\n+        query = \"SELECT id, username, email FROM users WHERE username = ?\"\n         try:\n-            rows = db.execute(query).fetchall()\n+            rows = db.execute(query, (name,)).fetchall()\n         except sqlite3.Error as exc:\n             return jsonify(error=str(exc)), 400\n         return jsonify(\n",
+      "poc_exit": 0,
+      "poc_output": "app under test      : app_under_test\nnormal  'alice'     -> 1 row(s)\npayload \"' OR '1'='1\" -> 0 row(s)\nSAFE: the payload did not leak extra rows.",
+      "tests_exit": 0,
+      "tests_output": "......                                                                   [100%]\n6 passed in 0.20s",
+      "attempts": 1,
+      "attempt_history": [],
+      "human_wait_s": 0.0,
+      "approval": "auto (--yes)",
+      "exported": true,
+      "export_path": "out\\patches\\CWE-89.diff"
+    },
+    "manual:CWE-22": {
+      "attempt": 2,
+      "approved": true,
+      "accepted": true,
+      "diff": "--- target_app/app.py\n+++ candidates/CWE-22/app.py\n@@ -7,6 +7,7 @@\n Local only: in-memory database, temp files, fake secrets. Never deploy this.\n \"\"\"\n import atexit\n+import os\n import shutil\n import sqlite3\n import subprocess\n@@ -65,11 +66,20 @@\n     @app.get(\"/files\")\n     def read_file():\n         name = request.args.get(\"name\", \"\")\n-        # VULNERABLE (CWE-22): the name is joined to the public folder without\n-        # checking where the resulting path really points.\n-        path = public / name\n+        # Fix for CWE-22: ensure the resolved path stays inside the public directory.\n+        requested = (public / name).resolve()\n+        public_resolved = public.resolve()\n+        # Ensure the requested path is a subpath of public_resolved.\n         try:\n-            return jsonify(content=path.read_text(encoding=\"utf-8\"))\n+            # Using os.path.commonpath on strings to avoid reliance on Python 3.9+ Path.is_relative_to.\n+            if os.path.commonpath([str(requested), str(public_resolved)]) != str(public_resolved):\n+                return jsonify(error=\"not found\"), 404\n+        except ValueError:\n+            # paths don't share a common prefix (e.g., different drives on Windows)\n+            return jsonify(error=\"not found\"), 404\n+\n+        try:\n+            return jsonify(content=requested.read_text(encoding=\"utf-8\"))\n         except OSError:\n             return jsonify(error=\"not found\"), 404\n \n",
+      "poc_exit": 0,
+      "poc_output": "app under test      : app_under_test\nnormal  'readme.txt' -> 'Welcome to the demo app.'\npayload '../secret.txt' -> ''\nSAFE: the private file was not returned.",
+      "tests_exit": 0,
+      "tests_output": "......                                                                   [100%]\n6 passed in 0.21s",
+      "attempts": 2,
+      "attempt_history": [
+        {
+          "attempt": 1,
+          "approved": true,
+          "accepted": false,
+          "diff": "--- target_app/app.py\n+++ candidates/CWE-22/app.py\n@@ -7,6 +7,7 @@\n Local only: in-memory database, temp files, fake secrets. Never deploy this.\n \"\"\"\n import atexit\n+import os\n import shutil\n import sqlite3\n import subprocess\n@@ -65,11 +66,20 @@\n     @app.get(\"/files\")\n     def read_file():\n         name = request.args.get(\"name\", \"\")\n-        # VULNERABLE (CWE-22): the name is joined to the public folder without\n-        # checking where the resulting path really points.\n-        path = public / name\n+        # Fix for CWE-22: ensure the resolved path stays inside the public directory.\n+        requested = (public / name).resolve()\n+        public_resolved = public.resolve()\n+        # Ensure the requested path is a subpath of public_resolved.\n         try:\n-            return jsonify(content=path.read_text(encoding=\"utf-8\"))\n+            # Using os.path.commonpath to avoid reliance on Python 3.9+ Path.is_relative_to.\n+            if os.path.commonpath([requested, public_resolved]) != public_resolved:\n+                return jsonify(error=\"not found\"), 404\n+        except ValueError:\n+            # paths don't share a common prefix (e.g., different drives on Windows)\n+            return jsonify(error=\"not found\"), 404\n+\n+        try:\n+            return jsonify(content=requested.read_text(encoding=\"utf-8\"))\n         except OSError:\n             return jsonify(error=\"not found\"), 404\n \n",
+          "poc_exit": 2,
+          "poc_output": "app under test      : app_under_test\nnormal  'readme.txt' -> ''\npayload '../secret.txt' -> ''\nBROKEN: the legitimate file is no longer served.",
+          "tests_exit": 1,
+          "tests_output": "...FF.                                                                   [100%]\n=================================== FAILURES ===================================\n_______________________ test_files_serves_a_public_file ________________________\n\nclient = <FlaskClient <Flask 'app_under_test'>>\n\n    def test_files_serves_a_public_file(client):\n        resp = client.get(\"/files\", query_string={\"name\": \"readme.txt\"})\n>       assert resp.status_code == 200\nE       assert 404 == 200\nE        +  where 404 = <WrapperTestResponse streamed [404 NOT FOUND]>.status_code\n\ntest_target_app.py:38: AssertionError\n________ test_files_work_when_the_data_dir_is_reached_through_a_symlink ________\n\ntmp_path = PosixPath('/tmp/pytest-of-root/pytest-0/test_files_work_when_the_data_0')\nmonkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7ffff54e99a0>\n\n    def test_files_work_when_the_data_dir_is_reached_through_a_symlink(tmp_path, monkeypatch):\n        \"\"\"Patches that compare a resolved path with an unresolved one break when the temp\n        dir is a symlink (the default on macOS). Linux judges must catch that too.\"\"\"\n        real = tmp_path / \"real\"\n        real.mkdir()\n        link = tmp_path / \"link\"\n        try:\n            os.symlink(real, link, target_is_directory=True)\n        except (OSError, NotImplementedError):\n            pytest.skip(\"symlinks are not available on this machine\")\n        monkeypatch.setattr(tempfile, \"tempdir\", str(link))\n        client = load_app(os.environ.get(\"APP_DIR\", \"target_app\")).test_client()\n        resp = client.get(\"/files\", query_string={\"name\": \"readme.txt\"})\n>       assert resp.status_code == 200\nE       assert 404 == 200\nE        +  where 404 = <WrapperTestResponse streamed [404 NOT FOUND]>.status_code\n\ntest_target_app.py:55: AssertionError\n=========================== short test summary info ============================\nFAILED test_target_app.py::test_files_serves_a_public_file - assert 404 == 200\nFAILED test_target_app.py::test_files_work_when_the_data_dir_is_reached_through_a_symlink\n2 failed, 4 passed in 0.22s"
+        }
+      ],
+      "human_wait_s": 0.0,
+      "approval": "auto (--yes)",
+      "exported": true,
+      "export_path": "out\\patches\\CWE-22.diff"
+    }
+  },
+  "enrichment": {
+    "pillow:PYSEC-2026-1794": {
+      "query": "CVE-2023-4863 exploited in the wild public exploit proof of concept vendor patch advisory",
+      "sources": [
+        {
+          "title": "CVE-2023-4863 and CVE-2023-5217 Exploited in the Wild | Wiz Blog",
+          "url": "https://www.wiz.io/blog/cve-2023-4863-and-cve-2023-5217-exploited-in-the-wild",
+          "snippet": "|\n\nCVE-2023-4863 is a critical vulnerability in libwebp, and CVE-2023-5217 is a high severity vulnerability in libvpx, both reportedly exploited in the wild. Both are mainly client side vulnerabilities and thus unlikely to be exploitable on most affected cloud workloads other than virtual desktops and servers that handle images or video. Customers should therefore prioritize patching these cases as well as vulnerable instances detected in build environments.\n\n# What is CVE-2023-4863? [...] ## Background\n\nOn September 11th, 2023, a vulnerability was assigned CVE-2023-4863 that reportedly only affected Chrome. More specifically, it was described as a heap buffer overflow in WebP in Chrome, allowing a remote attacker to perform an out of bounds memory write via a crafted HTML page. [...] While both vulnerabilities have been reportedly exploited in the wild, no concrete details about the corresponding malicious activity have been published as of October 1, 2023. If the reported overlap between CVE-2023-4863 and CVE-2023-41064 turns out to be correct, then BLASTPASS would currently be the only publicly known campaign exploiting the relevant flaw in libwebp.\n\n# Which products are affected?\n\n## CVE-2023-4863"
+        },
+        {
+          "title": "CVE-2023-4863 Vulnerability: Analysis, Detection, Removal | Huntress",
+          "url": "https://www.huntress.com/threat-library/vulnerabilities/cve-2023-4863",
+          "snippet": "Proof-of-concept (PoC) exploits for CVE-2023-4863 have been widely circulated among security researchers. Active exploitation has already been observed in the wild, with attackers targeting end-user devices and enterprise networks. Exploit frameworks like Metasploit and other public repositories have showcased working examples.\n\n## How to detect CVE-2023-4863 vulnerability [...] CVE-2023-4863 is a critical remote code execution (RCE) vulnerability that affects certain implementations of WebP, an image format commonly used in web browsers. It exploits a heap buffer overflow condition due to improper input validation when handling crafted WebP images. This can enable attackers to execute arbitrary code on the target system, compromise its integrity, and potentially take complete control of affected devices. It has a CVSS score of 9.8, marking it as highly severe. [...] CVE-2023-4863 is a heap buffer overflow vulnerability in the WebP image format library. Attackers can craft malicious WebP files to exploit this flaw, resulting in unauthorized code execution.\n\nTypically, systems are compromised when users open malicious WebP images through vulnerable applications like browsers or email clients. Viewing these images triggers the exploit and executes the attacker\u2019s payload."
+        },
+        {
+          "title": "CVE-2023-4863 | Arctic Wolf",
+          "url": "https://arcticwolf.com/resources/blog/cve-2023-4863",
+          "snippet": "We have not identified a public proof of concept (PoC) exploit that allows for code execution; however, we have identified a PoC exploit for a DoS condition. Threat actors could leverage the DoS PoC exploit as a starting point to develop a PoC exploit that leads to arbitrary code execution. \n\n## Recommendations for CVE-2023-4863\n\nClosely Monitor Software Vendor Patch Advisories Related to CVE-2023-4863 [...] The vulnerability has been patched in the latest version of libwebp; however, the security patch is not automatically applied to software products that use the library under the hood of their code, such as electron-based applications and Chromium-based browsers. Remediating CVE-2023-4863 in third-party software products is only possible by applying the official security updates from vendors as they patch their products. [...] On September 7, 2023, Apple released emergency security updates to fix a buffer overflow vulnerability (CVE-2023-41064) impacting macOS, iOS, iPadOS, and watchOS products that was used in a zero-click exploitation chain by the NSO Group. Shortly after, on September 11, 2023, Google released an update to fix a buffer overflow vulnerability (CVE-2023-4863) in Google Chrome, which was reported by Apple\u2019s Security Engineering and Architecture (SEAR) and Citizen Lab. Both vulnerabilities were nearly"
+        },
+        {
+          "title": "NVD-CVE-2023-4863",
+          "url": "https://nvd.nist.gov/vuln/detail/cve-2023-4863",
+          "snippet": "### This CVE is in CISA's Known Exploited Vulnerabilities Catalog\n\nReference CISA's BOD 22-01 and Known Exploited Vulnerabilities Catalog for further guidance and requirements.\n\n| Vulnerability Name | Date Added | Due Date | Required Action |\n ---  --- |\n| Google Chromium WebP Heap-Based Buffer Overflow Vulnerability | September 13, 2023 | October 04, 2023 | Apply mitigations per vendor instructions or discontinue use of the product if mitigations are unavailable. |\n\n### Weakness Enumeration"
+        },
+        {
+          "title": "Threat Advisory: Critical WebP Zero-Day | Todyl",
+          "url": "https://www.todyl.com/blog/webp-threat-advisory",
+          "snippet": "## Summary\n\nThe WebP zero-day (CVE-2023-4863) is a vulnerability that targets the widely used open-source library, libwebp. Successful exploitation leads to a heap overflow that works across multiple browsers, operating systems, and applications. It's likely that CVE-2023-4863 is the same vulnerability used in the BLASTPASS attacks (CVE-2023-41064), which was a way to bypass the Apple iMessage sandbox.\n\n## How it works [...] ## How it works\n\nAn attacker can exploit the CVE-2023-4863 vulnerability in libwebp by using a specially crafted WebP lossless file to write data beyond the heap boundaries. A heap-based buffer overflow is a major vulnerability, and the functionality that causes it to happen falls in line with the atypical behavior of the majority of these programs. [...] ## Quick facts\n\n The WebP zero-day (CVE-2023-4863) vulnerability affects many major browsers including Chrome, as well as OS and apps.\n The vulnerability targets the libwebp library and uses heap buffer overflows to write data in restricted areas of a system\u2019s memory.\n Update Chrome immediately to address this critical vulnerability.\n\n## Summary"
+        }
+      ],
+      "assessment": {
+        "exploited_in_the_wild": "yes",
+        "public_exploit_code": "unclear",
+        "vendor_fix_available": "yes",
+        "summary": "CVE-2023-4863 (libwebp heap buffer overflow) is exploited in the wild [1][2]; public exploit code availability is uncertain due to conflicting reports [2][3]; a patch exists in latest libwebp but may not propagate automatically [3]."
+      },
+      "tavily_credits": 1
+    },
+    "pillow:PYSEC-2026-3493": {
+      "query": "CVE-2026-54058 exploited in the wild public exploit proof of concept vendor patch advisory",
+      "sources": [
+        {
+          "title": "May 2026 CVE Landscape",
+          "url": "https://www.recordedfuture.com/blog/may-2026-cve-landscape",
+          "snippet": "12 of the 41 vulnerabilities enabled remote code execution (RCE), affecting products from 8 vendors: Microsoft, Adobe, Langflow, Palo Alto Networks, Apache, openDCIM, Fortinet, and Ivanti.\n Insikt Group identified public proof-of-concept (PoC) exploits for 32 of the 41 vulnerabilities reported this month.\n The most commonly observed flaws this month were CWE-79 (Cross-site Scripting), CWE-506 (Embedded Malicious Code), and CWE-89 (SQL Injection), with three CVEs each. [...] All 22 vulnerabilities below were actively exploited in May 2026. This table does not include the 19 CVEs associated with honeypot activity, which are available to Recorded Future customers via the CVE Monthly Report. The table below also provides examples of public PoCs identified by Insikt Group\u00ae. These PoCs were not tested for accuracy or efficacy. Vulnerability management teams should exercise caution and verify the validity of PoCs before testing.\n\nRisk  \nScore\n\nMalware Analysis [...] ## Exploitation Analysis\n\nThis section highlights some of the highest-impact, actively exploited vulnerabilities this month, specifically those linked to known threat actor campaigns or that have public PoC exploits available. Vulnerabilities with no meaningful public technical detail are summarized in the quick reference table above only."
+        },
+        {
+          "title": "CVE-2026-54058",
+          "url": "https://explore.alas.aws.amazon.com/CVE-2026-54058.html",
+          "snippet": "# CVE-2026-54058\n\nPublic on 2026-07-14\n\nModified on 2026-09-11\n\nDescription [...] Description\n\nPillow is a Python imaging library. Prior to 12.3.0, when Pillow loads an uncompressed McIdas AREA image from a filename through the mmap raw codec path, attacker-controlled header words can set a row stride smaller than the natural row width, causing pixel access such as Image.tobytes(), getpixel, convert, or save to read beyond the mapped region and disclose adjacent process memory or fault. This issue is fixed in version 12.3.0.\n\nSeverity\n\nImportant severity\n\nImportant [...] # CVSS Scores\n\n| Score Type | Score | Vector |\n --- \n| Amazon Linux | CVSSv3 | 7.4 | CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:H/I:N/A:H |\n| NVD | CVSSv3 | 9.1 | CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:H |\n\n# References\n\nFAQs regarding Amazon Linux ALAS/CVE Severity Red Hat: CVE-2026-54058 Mitre: CVE-2026-54058"
+        },
+        {
+          "title": "CVE-2026-54058 - Red Hat Customer Portal",
+          "url": "https://access.redhat.com/security/cve/cve-2026-54058",
+          "snippet": "# CVE-2026-54058\n\n## Description\n\nA flaw was found in Pillow prior to 12.3.0. When an uncompressed McIdas AREA image is loaded from a filename through the mmap raw codec path, attacker-controlled header words can set a row stride smaller than the natural row width. Pixel access such as Image.tobytes(), getpixel, convert, or save can then read beyond the mapped region, disclosing adjacent process memory or causing a fault.\n\n## Statement [...] |  | Red Hat | NVD | cve.org |\n ---  --- |\n| Base Score | 9.1 | 9.1 | N/A |\n| Attack Vector | Network | Network | N/A |\n| Attack Complexity | Low | Low | N/A |\n| Privileges Required | None | None | N/A |\n| User Interaction | None | None | N/A |\n| Scope | Unchanged | Unchanged | N/A |\n| Confidentiality | High | High | N/A |\n| Integrity Impact | None | None | N/A |\n| Availability Impact | High | High | N/A |\n\n### Vector\n\nRed Hat: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:H [...] ## Statement\n\nPillow is vulnerable to an out-of-bounds read when processing a crafted uncompressed McIdas AREA image via the mmap raw codec. A remote attacker who can supply such an image to a service that loads it without user interaction may disclose adjacent process memory or trigger a denial of service. Fixed in Pillow 12.3.0.\n\n### Additional information\n\n### External references\n\n## Common Vulnerability Scoring System (CVSS) Score Details\n\n#### Info alert:Important note"
+        },
+        {
+          "title": "Common Vulnerabilities and Exposures (CVEs)<!-- --> | Tenable\u00ae",
+          "url": "https://www.tenable.com/cve",
+          "snippet": "Two zero-day vulnerabilities in Citrix NetScaler ADC and Gateway were exploited in the wild. Patches are available. Organizations are strongly advised to patch immediately.\n ##### CVE-2026-88771\n\n  ###### criticalVulnerability of Interest\n\n  Two zero-day vulnerabilities in Citrix NetScaler ADC and Gateway were exploited in the wild. Patches are available. Organizations are strongly advised to patch immediately.\n ##### CVE-2026-93836\n\n  ###### highVulnerability of Interest [...] Fortinet reports that a zero-day directory traversal flaw in FortiMail has been actively exploited in the wild. Apply the shared workarounds until patches become available.\n ##### CVE-2026-76504\n\n  ###### criticalVulnerability of Interest\n\n  Cisco's Product Security Incident Response Team confirmed active exploitation of this zero-day flaw in SD-WAN Manager. Apply the available patches as soon as possible.\n ##### CVE-2026-88772\n\n  ###### criticalVulnerability of Interest"
+        },
+        {
+          "title": "August 2026 Patch Tuesday: Updates and Analysis | CrowdStrike",
+          "url": "https://www.crowdstrike.com/en-us/blog/patch-tuesday-analysis-august-2026",
+          "snippet": "Microsoft reports that this vulnerability has been exploited in the wild.\n\nTable 1. Exploited zero-day vulnerability in Windows Ancillary Function Driver for WinSock\n\n| Severity | CVSS Score | CVE | Description | Action Required? |\n| Important | 7.0 | CVE-2026-68820 | Windows Ancillary Function Driver for WinSock Elevation of Privilege Vulnerability | Yes |\n\n## Publicly Disclosed Vulnerability in Windows User Profile Service [...] At the time of this writing, no CVE has been assigned and no patch is available. ShieldBreak is the tenth release in the Nightmare-Eclipse series, following BlueHammer, RedSun, UnDefend, YellowKey, GreenPlasma, MiniPlasma, GreatXML, RoguePlanet, and LegacyHive. MSNightmare is associated with the Nightmare-Eclipse persona, some of whose previously released vulnerabilities have been confirmed to be exploited in the wild.\n\n## Patch Tuesday Dashboard in the Falcon Platform [...] will also block modified or obfuscated variants of the exploit. Organizations that were running Defender without updated signatures on Patch Tuesday may have had a brief window of exposure, but the updated Defender signatures appear sufficient to block this exploit in its current public state."
+        }
+      ],
+      "assessment": {
+        "exploited_in_the_wild": "unclear",
+        "public_exploit_code": "unclear",
+        "vendor_fix_available": "yes",
+        "summary": "CVE-2026-54058 impacts Pillow versions prior to 12.3.0, allowing attacker\u2011controlled McIdas AREA image headers to cause out\u2011of\u2011bounds memory reads via functions like Image.tobytes(); fixed in 12.3.0 [2][3]. No indication of wild exploitation or public exploit code in the sources."
+      },
+      "tavily_credits": 1
+    },
+    "jinja2:PYSEC-2026-1471": {
+      "query": "CVE-2025-27516 exploited in the wild public exploit proof of concept vendor patch advisory",
+      "sources": [
+        {
+          "title": "Ivanti Endpoint Manager Mobile Exploit Chain Exploited in the Wild | Rapid7 Blog",
+          "url": "https://www.rapid7.com/blog/post/2025/05/16/etr-ivanti-epmm-exploit-chain-exploited-in-the-wild",
+          "snippet": "The vendor has provided patches for affected versions of EPMM. Customers are advised to follow the vendor guidance, and remediate this vulnerability by upgrading to a fixed version on an emergency basis, without waiting for a regular patch cycle to occur.\n\nThe following list outlines the affected supported EPMM versions, and their respective fixes: [...] On May 15, 2025, a technical analysis and accompanying proof-of-concept exploit was published publicly. With public exploit code now available, the risk of broad exploitation in the wild has greatly increased.\n\nOn May 19, 2025, both CVE-2025-4427 and CVE-2025-4428 were added to the U.S. Cybersecurity and Infrastructure Security Agency\u2019s (CISA) list of known exploited vulnerabilities (KEV).\n\n## Mitigation guidance [...] Emergent Threat Response\n\n# Ivanti Endpoint Manager Mobile exploit chain exploited in the wild\n\nRyan Emmons\n\nRyan Emmons\n\n|Last updated on May 20, 2025|3 min read\n\nIvanti Endpoint Manager Mobile exploit chain exploited in the wild\n\nIvanti Endpoint Manager Mobile exploit chain exploited in the wild"
+        },
+        {
+          "title": "Ivanti Endpoint Manager Mobile Exploit Chain Exploited in the Wild | Rapid7 Blog",
+          "url": "http://rapid7.com/blog/post/2025/05/16/etr-ivanti-epmm-exploit-chain-exploited-in-the-wild",
+          "snippet": "The vendor has provided patches for affected versions of EPMM. Customers are advised to follow the vendor guidance, and remediate this vulnerability by upgrading to a fixed version on an emergency basis, without waiting for a regular patch cycle to occur.\n\nThe following list outlines the affected supported EPMM versions, and their respective fixes: [...] On May 15, 2025, a technical analysis and accompanying proof-of-concept exploit was published publicly. With public exploit code now available, the risk of broad exploitation in the wild has greatly increased.\n\nOn May 19, 2025, both CVE-2025-4427 and CVE-2025-4428 were added to the U.S. Cybersecurity and Infrastructure Security Agency\u2019s (CISA) list of known exploited vulnerabilities (KEV).\n\n## Mitigation guidance [...] Emergent Threat Response\n\n# Ivanti Endpoint Manager Mobile exploit chain exploited in the wild\n\nRyan Emmons\n\nRyan Emmons\n\n|Last updated on May 20, 2025|3 min read\n\nIvanti Endpoint Manager Mobile exploit chain exploited in the wild\n\nIvanti Endpoint Manager Mobile exploit chain exploited in the wild"
+        },
+        {
+          "title": "exploited in the wild Archives \u2022 Daily CyberSecurity",
+          "url": "https://securityonline.info/tag/exploited-in-the-wild",
+          "snippet": "Read More Read more about CVE-2026-19478: GitLab Flaw Exploited in the Wild, PoC Public\n\nCVE-2026-77806: SPIP Unauthenticated RCE Exploited in the Wild as Public Exploit Lands SPIP CVE-2026-77806 unauthenticated remote code execution vulnerability exploited in the wild public exploit patch 4.4.21\n\n Vulnerability Report\n\n### CVE-2026-77806: SPIP Unauthenticated RCE Exploited in the Wild as Public Exploit Lands\n\n Do Son    August 21, 2026     0 [...] ### Proxmox VE 7 Auth Bypass: PoC Public, Exploited in the Wild\n\n Do Son    September 1, 2026     0\n\nTL;DR Proxmox published advisory PSA-2026-00043-1 on September 1, 2026. It warns of a critical Proxmox VE authentication...\n\nRead More Read more about Proxmox VE 7 Auth Bypass: PoC Public, Exploited in the Wild\n\nCVE-2026-9586: Switchvox RCE Exploited in the Wild Sangoma Switchvox vulnerability CVE-2026-9586 SQL injection remote code execution exploited in the wild diagram\n\n Vulnerability Report [...] ### Acronis cPanel Plugin Flaw Exploited in the Wild, Patch Now\n\n Do Son    September 14, 2026     0\n\nTL;DR Acronis fixed a high-severity Acronis cPanel plugin vulnerability in its Backup plugin for cPanel and WHM....\n\nRead More Read more about Acronis cPanel Plugin Flaw Exploited in the Wild, Patch Now"
+        },
+        {
+          "title": "CVE-2026-77647 Exploited in the Wild \u2014 SPIP | Previdian",
+          "url": "https://kevintel.com/CVE-2026-77647",
+          "snippet": "Third-party attestation and first-party sensor observation are shown separately so teams can judge the evidence chain.\n\n### Exploited in the wild\n\nCVE\n\n Recorded 20 Aug 2026\n\nA trusted third party reported exploitation.\n\n### Proof of concept available\n\n1dayexploit\n\n Recorded 24 Aug 2026\n\nPublic scanner or PoC coverage increases practical exploitability.\n\n### Known exploited vulnerability sources\n\nPer-source evidence links for KEV attestations are available through the Previdian Pro API. [...] What should we do?\n\nPrioritize remediation. Validate affected assets and apply vendor fixes on an accelerated timeline.\n\nOverview\n\n## SPIP\n\nSPIP before 4.4.20 allows unauthenticated remote attackers to execute arbitrary code, as exploited in the wild in August 2026. This is related to incorrect identification of\n\nVendor Product Affected Status\n\nSPIP  Affected\n\nSPIP\n\nBefore 4.4.20\n\nAffected\n\n View vendor advisory (opens in new tab)\n\nPublished\n:   20 Aug 2026 [...] Exploitation Reported\n:   20 Aug 2026\n\nAttack vector\n:   Remote\n\nComplexity\n:   Low\n\nPrivileges\n:   None\n\nUser interaction\n:   None\n\n### CVE References\n\n CVE Record  CVE.org \u00b7 CVE Record  \n Vendor Advisory \u2014 blog.spip.net  blog.spip.net \u00b7 Vendor Advisory  \n Third-Party Advisory \u2014 lists.debian.org  lists.debian.org \u00b7 Third-Party Advisory  \n\nExploitation evidence\n\n## Why Previdian marks this CVE as exploited"
+        },
+        {
+          "title": "Critical vulnerabilities in Fortinet CVE-2025-59718, CVE-2025-59719 exploited in the wild",
+          "url": "https://www.rapid7.com/blog/post/etr-critical-vulnerabilities-in-fortinet-cve-2025-59718-cve-2025-59719-exploited-in-the-wild",
+          "snippet": "+ According to Fortinet\u2019s advisory, a patch deployed to their own FortiCloud SSO infrastructure on January 26, 2026 has remediated the vulnerability. However, patched software is available for customers, since the cloud-side fix introduces breaking changes to the FortiCloud SSO login protocol. Because of this, fixed versions are listed, along with IoCs from exploitation in the wild. [...] Rapid7 initially observed CVE-2025-59718 exploitation attempts against honeypots on December 17, 2025, alongside a proof-of-concept exploit on GitHub resembling those requests. Update as of January 16, 2026, Rapid7 has identified threat actors actively exploiting authentication bypass vulnerabilities CVE-2025-59718 and CVE-2025-59719 on vulnerable FortiGate devices exposed to the public internet.\n\n## Mitigation guidance\n\n CVE-2025-59718 and CVE-2025-59719:"
+        }
+      ],
+      "assessment": {
+        "exploited_in_the_wild": "unclear",
+        "public_exploit_code": "unclear",
+        "vendor_fix_available": "unclear",
+        "summary": "The provided sources do not contain any information about Jinja2 3.1.2 (CVE-2025-27516), so exploitation status, public exploit code, and vendor fix availability cannot be determined."
+      },
+      "tavily_credits": 1
+    },
+    "jinja2:PYSEC-2026-1472": {
+      "query": "CVE-2024-56201 exploited in the wild public exploit proof of concept vendor patch advisory",
+      "sources": [
+        {
+          "title": "Ivanti Endpoint Manager Mobile Exploit Chain Exploited in the Wild | Rapid7 Blog",
+          "url": "https://www.rapid7.com/blog/post/2025/05/16/etr-ivanti-epmm-exploit-chain-exploited-in-the-wild",
+          "snippet": "The vendor has provided patches for affected versions of EPMM. Customers are advised to follow the vendor guidance, and remediate this vulnerability by upgrading to a fixed version on an emergency basis, without waiting for a regular patch cycle to occur.\n\nThe following list outlines the affected supported EPMM versions, and their respective fixes: [...] The vulnerabilities were reported to the vendor by CERT-EU, the European Union\u2019s Cybersecurity Service for the Union institutions, bodies, offices and agencies. The vendor has disclosed that this exploit chain has been exploited in the wild to a limited degree. Notably, this product was previously targeted by an unknown threat actor against the Norwegian Security and Service Organization (DSS) in 2023. [...] On May 15, 2025, a technical analysis and accompanying proof-of-concept exploit was published publicly. With public exploit code now available, the risk of broad exploitation in the wild has greatly increased.\n\nOn May 19, 2025, both CVE-2025-4427 and CVE-2025-4428 were added to the U.S. Cybersecurity and Infrastructure Security Agency\u2019s (CISA) list of known exploited vulnerabilities (KEV).\n\n## Mitigation guidance"
+        },
+        {
+          "title": "Ivanti Endpoint Manager Mobile Exploit Chain Exploited in the Wild | Rapid7 Blog",
+          "url": "http://rapid7.com/blog/post/2025/05/16/etr-ivanti-epmm-exploit-chain-exploited-in-the-wild",
+          "snippet": "The vendor has provided patches for affected versions of EPMM. Customers are advised to follow the vendor guidance, and remediate this vulnerability by upgrading to a fixed version on an emergency basis, without waiting for a regular patch cycle to occur.\n\nThe following list outlines the affected supported EPMM versions, and their respective fixes: [...] The vulnerabilities were reported to the vendor by CERT-EU, the European Union\u2019s Cybersecurity Service for the Union institutions, bodies, offices and agencies. The vendor has disclosed that this exploit chain has been exploited in the wild to a limited degree. Notably, this product was previously targeted by an unknown threat actor against the Norwegian Security and Service Organization (DSS) in 2023. [...] On May 15, 2025, a technical analysis and accompanying proof-of-concept exploit was published publicly. With public exploit code now available, the risk of broad exploitation in the wild has greatly increased.\n\nOn May 19, 2025, both CVE-2025-4427 and CVE-2025-4428 were added to the U.S. Cybersecurity and Infrastructure Security Agency\u2019s (CISA) list of known exploited vulnerabilities (KEV).\n\n## Mitigation guidance"
+        },
+        {
+          "title": "CVE-2024-44849 Exploited in the Wild \u2014 Qualitor | Previdian",
+          "url": "https://kevintel.com/CVE-2024-44849",
+          "snippet": "What should we do?\n\nPrioritize remediation. Validate affected assets and apply vendor fixes on an accelerated timeline.\n\nOverview\n\n## Qualitor up to 8.24 is vulnerable to Remote Code Execution (RCE) via Arbitrary File Upload in checkAcesso.php\n\nQualitor up to 8.24 is vulnerable to Remote Code Execution (RCE) via Arbitrary File Upload in checkAcesso.php.\n\nVendor Product Affected Status\n\nqualitor  Affected\n\nqalitor\n\nThrough 8.24\n\nAffected\n\nPublished\n:   09 Sep 2024 [...] ## Why Previdian marks this CVE as exploited\n\nThird-party attestation and first-party sensor observation are shown separately so teams can judge the evidence chain.\n\n### Exploited in the wild\n\nThe Shadowserver\n\n Recorded 05 Jun 2026\n\nA trusted third party reported exploitation.\n\n### Proof of concept available\n\nGitHub\n\n Recorded 07 Sep 2024\n\nPublic scanner or PoC coverage increases practical exploitability.\n\n### Known exploited vulnerability sources [...] ### Potential Proof of Concepts\n\nThese PoCs are unverified and could contain malware. Use at your own risk.\n\nQualitor <= 8.24 - Remote Code Execution \n\nnuclei \u00b7 Created Unknown\n\nTimeline\n\n## From disclosure to observed exploitation\n\n1. 14:20 UTC\n\n   ### Public PoC available\n\n   Public proof-of-concept code published\n2. 00:00 UTC\n\n   ### Added to Previdian KEV Feed\n\n   High-confidence, third-party attested exploitation\n3. 00:00 UTC\n\n   ### Nuclei template available"
+        },
+        {
+          "title": "exploited in the wild Archives \u2022 Daily CyberSecurity",
+          "url": "https://securityonline.info/tag/exploited-in-the-wild",
+          "snippet": "Read More Read more about CVE-2026-19478: GitLab Flaw Exploited in the Wild, PoC Public\n\nCVE-2026-77806: SPIP Unauthenticated RCE Exploited in the Wild as Public Exploit Lands SPIP CVE-2026-77806 unauthenticated remote code execution vulnerability exploited in the wild public exploit patch 4.4.21\n\n Vulnerability Report\n\n### CVE-2026-77806: SPIP Unauthenticated RCE Exploited in the Wild as Public Exploit Lands\n\n Do Son    August 21, 2026     0 [...] Read More Read more about MediaWiki External Data CVE-2026-100382 (CVSS 10) Unauthenticated RCE Exploited in the Wild, PoC Public\n\nExploited Citrix NetScaler Flaw CVE-2026-88771: Details and PoC Now Public Citrix NetScaler CVE-2026-88771 pre-auth command injection exploited in the wild, with technical details and a proof-of-concept detection tool released by watchTowr\n\n Vulnerability Report\n\n### Exploited Citrix NetScaler Flaw CVE-2026-88771: Details and PoC Now Public [...] Sharp Printer Flaw CVE-2024-58388 Exploited in the Wild, PoC Public Sharp printer vulnerability CVE-2024-58388 exploited in the wild, PoC public\n\n Vulnerability Report\n\n### Sharp Printer Flaw CVE-2024-58388 Exploited in the Wild, PoC Public\n\n Do Son    October 2, 2026     0\n\nTL;DR A Sharp printer vulnerability, now tracked as CVE-2024-58388, lets unauthenticated attackers read any file on the...\n\nRead More Read more about Sharp Printer Flaw CVE-2024-58388 Exploited in the Wild, PoC Public"
+        },
+        {
+          "title": "CVE-2026-77647 Exploited in the Wild \u2014 SPIP | Previdian",
+          "url": "https://kevintel.com/CVE-2026-77647",
+          "snippet": "Exploitation Reported\n:   20 Aug 2026\n\nAttack vector\n:   Remote\n\nComplexity\n:   Low\n\nPrivileges\n:   None\n\nUser interaction\n:   None\n\n### CVE References\n\n CVE Record  CVE.org \u00b7 CVE Record  \n Vendor Advisory \u2014 blog.spip.net  blog.spip.net \u00b7 Vendor Advisory  \n Third-Party Advisory \u2014 lists.debian.org  lists.debian.org \u00b7 Third-Party Advisory  \n\nExploitation evidence\n\n## Why Previdian marks this CVE as exploited [...] What should we do?\n\nPrioritize remediation. Validate affected assets and apply vendor fixes on an accelerated timeline.\n\nOverview\n\n## SPIP\n\nSPIP before 4.4.20 allows unauthenticated remote attackers to execute arbitrary code, as exploited in the wild in August 2026. This is related to incorrect identification of\n\nVendor Product Affected Status\n\nSPIP  Affected\n\nSPIP\n\nBefore 4.4.20\n\nAffected\n\n View vendor advisory (opens in new tab)\n\nPublished\n:   20 Aug 2026 [...] Third-party attestation and first-party sensor observation are shown separately so teams can judge the evidence chain.\n\n### Exploited in the wild\n\nCVE\n\n Recorded 20 Aug 2026\n\nA trusted third party reported exploitation.\n\n### Proof of concept available\n\n1dayexploit\n\n Recorded 24 Aug 2026\n\nPublic scanner or PoC coverage increases practical exploitability.\n\n### Known exploited vulnerability sources\n\nPer-source evidence links for KEV attestations are available through the Previdian Pro API."
+        }
+      ],
+      "assessment": {
+        "exploited_in_the_wild": "unclear",
+        "public_exploit_code": "unclear",
+        "vendor_fix_available": "unclear",
+        "summary": "The provided sources do not mention Jinja2, CVE-2024-56201, or any related exploitation details, so its status remains unclear."
+      },
+      "tavily_credits": 1
+    }
+  },
+  "usage": {
+    "nemotron_calls": 8,
+    "tokens": 19477,
+    "est_cost_usd": 0.011797
+  },
+  "duration_s": 66.2,
+  "human_review_s": 0.0
+}

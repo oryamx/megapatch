@@ -4,7 +4,10 @@ __pycache__/
 *.pyc
 FEEDBACK_NOTES.md
 GUIA_GABI.md
+SUBMISSION_DRAFT.md
 .claude/
 candidates/
+out/
 evidence/run_*.json
+!evidence/run_with_repair.json
 logs/

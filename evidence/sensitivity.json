@@ -1,15 +1,16 @@
 {
   "configurations_tested": 216,
-  "F-11 (CVSS 9.8, rarely exploited) ranks below F-04 (CVSS 7.5, in KEV)": 1.0,
-  "F-11 stays outside the top 8": 1.0,
-  "internet-facing KEV findings F-01, F-03, F-04 all in the top 4": 1.0,
-  "our 3 code findings F-12, F-13, F-14 all inside the top 8": 1.0,
-  "F-12 rank range (min, max)": [
-    4,
-    6
+  "findings_ranked": 72,
+  "CVE-2023-37920 (CVSS 9.8, rarely exploited) ranks below CVE-2023-4863 (in KEV)": 1.0,
+  "CVE-2023-37920 stays outside the top 20": 1.0,
+  "CVE-2023-4863 (in KEV, internet-facing) stays in the top 3": 1.0,
+  "our 3 code findings all stay inside the top 8": 1.0,
+  "bandit:CWE-89 rank range (min, max)": [
+    3,
+    3
   ],
-  "F-14 rank range (min, max)": [
-    6,
-    8
+  "manual:CWE-22 rank range (min, max)": [
+    4,
+    5
   ]
 }

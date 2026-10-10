@@ -23,7 +23,7 @@ import enrich
 import llm
 import run_patch_loop as loop
 from catalog import CLASSES
-from scorerisk import score_all
+from scorerisk import FINGERPRINT_VERSION, fingerprint, score_all
 
 EVIDENCE_DIR = Path("evidence")
 WORKERS = 4  # independent sandbox runs, searches and model calls go in parallel
@@ -59,7 +59,8 @@ def main():
     top = ranked[: args.top]
     print(f"=== 1. ScoreRisk (rule, not a model) | threat data from {threat['fetched_at'][:10]} ===")
     for r in top:
-        print(f"  #{r['rank']} {r['id']} score {r['pre_score']:>5}  CVSS {r['cvss']:>4}  {r['title']}")
+        cvss = f"{r['cvss']:.1f}" if r["cvss"] is not None else "n/a"
+        print(f"  #{r['rank']} {r['id']} score {r['pre_score']:>5}  CVSS {cvss:>4}  {r['title']}")
 
     print(f"\n=== 2. Verification of the top {args.top} in {where} ===")
     with ThreadPoolExecutor(max_workers=WORKERS) as pool:
@@ -114,6 +115,8 @@ def main():
         patch = patches.get(finding_id)
         if patch and patch["accepted"]:
             extra = f" (after {patch['attempts']} attempts)" if patch.get("attempts", 1) > 1 else ""
+            if not patch.get("exported", True):
+                return "CONFIRMED -> patch verified in the sandbox, export not approved" + extra
             return "CONFIRMED -> PATCHED, same PoC now fails" + extra
         if patch and not patch["approved"]:
             return "CONFIRMED -> patch proposed, not run (no approval)"
@@ -145,6 +148,7 @@ def main():
         json.dumps(
             {
                 "run_at": stamp, "executor": where, "top_n": args.top, "model": llm.MODEL,
+                "inventory_fingerprint": fingerprint(), "fingerprint_version": FINGERPRINT_VERSION,
                 "final_order": [
                     {"position": i, "id": r["id"], "scorerisk_rank": r["rank"], "pre_score": r["pre_score"],
                      "cvss": r["cvss"], "status": status(r["id"])}

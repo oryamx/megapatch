@@ -1,0 +1,13 @@
+{
+  "checked_at": "2026-10-10T02:32:15+00:00",
+  "results": {
+    "operating system": "Linux 7.0.6\nPRETTY_NAME=\"Debian GNU/Linux 13 (trixie)\"\nNAME=\"Debian GNU/Linux\"",
+    "running as": "uid=0(root) gid=0(root) groups=0(root)",
+    "environment variable NAMES (values are not recorded)": "GPG_KEY LANG PATH PS1 PWD PYTHON_SHA256 PYTHON_VERSION SHELL TERM",
+    "variables that look like credentials": "GPG_KEY",
+    "files in the working directory": "/work/app_under_test/app.py\n/work/harness.py\n/work/poc_cmdi.py\n/work/poc_path.py\n/work/poc_sqli.py\n/work/test_target_app.py",
+    "home directories": "/home:\n\n/root:\n.bashrc\n.cache",
+    "host drives or mounts from the developer's machine": "ls: cannot access '/c': No such file or directory\nls: cannot access '/host': No such file or directory\n/mnt:\nrootfs on / type virtiofs (rw,relatime)",
+    "outbound TCP connection (pypi.org:443, the host pip uses)": "reachable"
+  }
+}

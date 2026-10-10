@@ -4,6 +4,9 @@ The weights are a starting point, not truth. This script re-scores the findings
 under many reasonable parameter choices and reports which conclusions hold in
 all of them and which depend on the choice.
 
+It varies the weights and constants, NOT the inputs: the exposure of each asset
+is still a declared assumption.
+
 Usage: python sensitivity.py        (writes evidence/sensitivity.json)
 """
 import itertools
@@ -22,19 +25,25 @@ X_VARIANTS = {
 }
 BASELINE = (sr.W_E, sr.W_X, sr.W_S, sr.KEV_FLOOR, sr.UNKNOWN_E, dict(sr.X_WEIGHTS))
 
+RARE_CVE = "CVE-2023-37920"   # certifi: CVSS 9.8, almost never exploited, internal asset
+KEV_CVE = "CVE-2023-4863"     # libwebp via Pillow: lower CVSS, in KEV, internet-facing asset
+CODE_IDS = ("bandit:CWE-89", "bandit:CWE-78", "manual:CWE-22")
+
 
 def ranks_under(w_e, w_x, kev_floor, unknown_e, x_weights):
     sr.W_E, sr.W_X, sr.W_S = w_e, w_x, round(1 - w_e - w_x, 2)
     sr.KEV_FLOOR, sr.UNKNOWN_E, sr.X_WEIGHTS = kev_floor, unknown_e, x_weights
     ranked, _ = sr.score_all()
-    return {r["id"]: r["rank"] for r in ranked}
+    by_key = {r["id"]: r["rank"] for r in ranked}
+    by_key.update({r["cve"]: r["rank"] for r in ranked if r["cve"]})
+    return by_key, len(ranked)
 
 
 def main():
-    runs = [
-        ranks_under(e, x, kf, ue, xw)
-        for (e, x), kf, ue, xw in itertools.product(W_PAIRS, KEV_FLOORS, UNKNOWN_ES, X_VARIANTS.values())
-    ]
+    runs, total = [], 0
+    for (e, x), kf, ue, xw in itertools.product(W_PAIRS, KEV_FLOORS, UNKNOWN_ES, X_VARIANTS.values()):
+        ranks, total = ranks_under(e, x, kf, ue, xw)
+        runs.append(ranks)
     sr.W_E, sr.W_X, sr.W_S, sr.KEV_FLOOR, sr.UNKNOWN_E, sr.X_WEIGHTS = BASELINE
     n = len(runs)
 
@@ -43,19 +52,18 @@ def main():
 
     results = {
         "configurations_tested": n,
-        "F-11 (CVSS 9.8, rarely exploited) ranks below F-04 (CVSS 7.5, in KEV)": share(lambda r: r["F-11"] > r["F-04"]),
-        "F-11 stays outside the top 8": share(lambda r: r["F-11"] > 8),
-        "internet-facing KEV findings F-01, F-03, F-04 all in the top 4": share(
-            lambda r: max(r["F-01"], r["F-03"], r["F-04"]) <= 4
+        "findings_ranked": total,
+        f"{RARE_CVE} (CVSS 9.8, rarely exploited) ranks below {KEV_CVE} (in KEV)": share(
+            lambda r: r[RARE_CVE] > r[KEV_CVE]
         ),
-        "our 3 code findings F-12, F-13, F-14 all inside the top 8": share(
-            lambda r: max(r["F-12"], r["F-13"], r["F-14"]) <= 8
-        ),
-        "F-12 rank range (min, max)": [min(r["F-12"] for r in runs), max(r["F-12"] for r in runs)],
-        "F-14 rank range (min, max)": [min(r["F-14"] for r in runs), max(r["F-14"] for r in runs)],
+        f"{RARE_CVE} stays outside the top 20": share(lambda r: r[RARE_CVE] > 20),
+        f"{KEV_CVE} (in KEV, internet-facing) stays in the top 3": share(lambda r: r[KEV_CVE] <= 3),
+        "our 3 code findings all stay inside the top 8": share(lambda r: max(r[i] for i in CODE_IDS) <= 8),
+        "bandit:CWE-89 rank range (min, max)": [min(r["bandit:CWE-89"] for r in runs), max(r["bandit:CWE-89"] for r in runs)],
+        "manual:CWE-22 rank range (min, max)": [min(r["manual:CWE-22"] for r in runs), max(r["manual:CWE-22"] for r in runs)],
     }
-    print(f"Configurations tested: {n} (weights, KEV floor, unknown-E constant, exposure weights)\n")
-    for key, value in list(results.items())[1:]:
+    print(f"Configurations tested: {n} (weights, KEV floor, unknown-E constant, exposure weights) on {total} findings\n")
+    for key, value in list(results.items())[2:]:
         text = f"{value:.0%}" if isinstance(value, float) else str(value)
         print(f"  {text:>9}  {key}")
 

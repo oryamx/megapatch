@@ -14,7 +14,6 @@ from pathlib import Path
 KEV_URL = "https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json"
 EPSS_URL = "https://api.first.org/data/v1/epss?cve="
 NVD_URL = "https://services.nvd.nist.gov/rest/json/cves/2.0?cveId="
-FINDINGS = Path("data/findings.json")
 OUT = Path("data/threat_data.json")
 NVD_PAUSE_S = 6.5  # NVD allows 5 requests per 30 s without an API key
 
@@ -46,8 +45,10 @@ def cvss_from_nvd(data):
 
 
 def main():
-    findings = json.loads(FINDINGS.read_text(encoding="utf-8"))["findings"]
-    cves = sorted({f["cve"] for f in findings if f["cve"]})
+    from ingest import build_findings
+
+    cves = sorted({f["cve"] for f in build_findings() if f["cve"]})
+    previous = json.loads(OUT.read_text(encoding="utf-8")).get("cvss", {}) if OUT.exists() else {}
 
     print(f"KEV catalog ...")
     kev_raw = get_json(KEV_URL)
@@ -70,6 +71,9 @@ def main():
 
     cvss = {}
     for i, cve in enumerate(cves, 1):
+        if previous.get(cve) is not None:  # already frozen in an earlier snapshot
+            cvss[cve] = previous[cve]
+            continue
         print(f"NVD {i}/{len(cves)} {cve} ...")
         cvss[cve] = cvss_from_nvd(get_json(NVD_URL + cve))
         time.sleep(NVD_PAUSE_S)

@@ -1,10 +1,15 @@
 """MegaPatch dashboard: the prioritized queue and the before/after evidence.
 
 Run:  streamlit run dashboard.py
-Reads the latest evidence/golden_run.json (or the newest evidence/run_*.json) and
-re-computes ScoreRisk offline from the frozen threat-data snapshot. No API keys
-needed, and nothing here calls a model or the sandbox.
+Shows evidence/golden_run.json by default and re-computes ScoreRisk offline from the
+frozen scanner outputs and threat-data snapshot. A sidebar selector lists the other
+local evidence/run_*.json files, but only runs that describe the CURRENT inventory and
+scoring set-up (same fingerprint; older files without one must have exactly the same
+finding ids). Incompatible runs are hidden and exact duplicates are dropped. In a clean
+clone (and on the public demo) only golden_run.json exists, so no selector appears.
+No API keys needed, and nothing here calls a model or the sandbox.
 """
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -16,19 +21,64 @@ import streamlit as st
 os.chdir(Path(__file__).resolve().parent)  # data/ and evidence/ are relative to this folder
 
 from bands import EPSS_ATTEND, band_for  # noqa: E402
-from scorerisk import score_all  # noqa: E402
+from scorerisk import FINGERPRINT_VERSION, fingerprint, score_all  # noqa: E402
 
 EVIDENCE = Path("evidence")
 
 st.set_page_config(page_title="MegaPatch", layout="wide")
 
 
-def latest_run_path():
+@st.cache_data(ttl=600)
+def current_state():
+    """The ids and the fingerprint of the ranking this page is about to show."""
+    ranked_now, _ = score_all()
+    return {r["id"] for r in ranked_now}, fingerprint()
+
+
+def is_compatible(path):
+    """A run is comparable to the current ranking only when it describes the SAME inputs and
+    scoring set-up: a matching current-version fingerprint (full findings, threat data,
+    parameters and ranking). Older files, whose fingerprint covered less, must have exactly
+    the same finding ids instead."""
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+        ids_now, fp_now = current_state()
+        if data.get("fingerprint_version") == FINGERPRINT_VERSION:
+            return data.get("inventory_fingerprint") == fp_now
+        return {item["id"] for item in data["final_order"]} == ids_now  # equal sets, not a subset
+    except (OSError, ValueError, KeyError):
+        return False
+
+
+def chosen_run_path():
+    """The recorded demo run by default; a sidebar selector appears only when other
+    compatible, distinct runs exist. Incompatible runs are hidden, not mixed in; exact
+    duplicates of an earlier option are dropped."""
     golden = EVIDENCE / "golden_run.json"
-    if golden.exists():
-        return golden
-    runs = sorted(EVIDENCE.glob("run_*.json"))
-    return runs[-1] if runs else None
+    others = sorted((p for p in EVIDENCE.glob("*run*.json") if p != golden), reverse=True)
+    found = ([golden] if golden.exists() else []) + others
+    options, seen_content, hidden = [], set(), 0
+    for path in found:
+        digest = hashlib.sha256(path.read_bytes()).hexdigest()
+        if not is_compatible(path):
+            hidden += 1
+        elif digest not in seen_content:
+            seen_content.add(digest)
+            options.append(path)
+    if hidden:
+        st.sidebar.caption(
+            f"{hidden} other run(s) hidden: they describe a different findings inventory or scoring set-up."
+        )
+    if not options:
+        return None
+    if len(options) == 1:
+        return options[0]
+    known = {
+        "golden_run.json": "Recorded demo run (golden_run.json)",
+        "run_with_repair.json": "Recorded run with a rejected-then-repaired patch",
+    }
+    names = {p: known.get(p.name, p.name) for p in options}
+    return st.sidebar.selectbox("Run to display", options, format_func=lambda p: names[p])
 
 
 def status_label(raw):
@@ -47,7 +97,7 @@ def status_label(raw):
 
 def run_signature():
     """Cache key: changes whenever the evidence file changes, so a new deploy shows new data."""
-    path = latest_run_path()
+    path = chosen_run_path()
     if path is None:
         return None
     stat = path.stat()
@@ -57,7 +107,7 @@ def run_signature():
 @st.cache_data(ttl=600)
 def load(signature):
     ranked, threat = score_all()
-    path = latest_run_path()
+    path = Path(signature[0]) if signature else None
     run = json.loads(path.read_text(encoding="utf-8")) if path else None
     sens_path = EVIDENCE / "sensitivity.json"
     sens = json.loads(sens_path.read_text(encoding="utf-8")) if sens_path.exists() else None
@@ -84,9 +134,15 @@ if run:
     cols[2].metric("Patched", len(patched), help="Fixed by Nemotron and re-tested with the same exploit")
     cols[3].metric("Nemotron cost (est.)", f"${run['usage']['est_cost_usd']:.4f}")
     cols[4].metric("Machine time", f"{run['duration_s']:.0f} s")
+    legacy = (
+        ""
+        if run.get("fingerprint_version") == FINGERPRINT_VERSION
+        else " This run predates the full inputs fingerprint; it is matched to the current ranking by "
+        "identical finding ids, and its recorded ranks and scores equal the current ones."
+    )
     st.caption(
         f"Run `{run_path.name}` on {run['executor']} with {run['model']}. "
-        f"Top {run['top_n']} entered verification."
+        f"Top {run['top_n']} entered verification.{legacy}"
     )
 else:
     st.info("No run found yet. Run `python megapatch.py` to create one.")
@@ -97,21 +153,33 @@ tab_queue, tab_proof, tab_evidence, tab_why, tab_repro = st.tabs(
 
 # ---------- 1. queue ----------
 with tab_queue:
-    drop = max(ranked, key=lambda r: r["rank"] - r["cvss_rank"])
-    # Biggest climb; on a tie prefer the lowest CVSS (the clearest "looks minor" example).
-    rise = min(ranked, key=lambda r: (r["rank"] - r["cvss_rank"], r["cvss"]))
+    # The two contrast cases, chosen by rule so the page never needs hand-picking:
+    # the critical-looking finding ScoreRisk ranks lowest, and the lower-CVSS finding in KEV it ranks highest.
+    critical = [r for r in ranked if (r["cvss"] or 0) >= 9.0]
+    minor_but_kev = [r for r in ranked if r["kev"] and (r["cvss"] is None or r["cvss"] < 9.0)]
+    drop = max(critical, key=lambda r: r["rank"]) if critical else ranked[-1]
+    rise = min(minor_but_kev, key=lambda r: r["rank"]) if minor_but_kev else ranked[0]
+
+    def describe(r):
+        where = "internet-facing (declared)" if r["internet_facing"] else "internal asset (declared)"
+        epss = f"{r['epss']:.3f}" if r["epss"] is not None else "n/a"
+        return f"EPSS {epss}, {'in' if r['kev'] else 'not in'} CISA KEV, {where}"
+
+    n_cves = len({r["cve"] for r in ranked if r["cve"]})
+    n_kev = len({r["cve"] for r in ranked if r["kev"]})
+    n_rare = len({r["cve"] for r in ranked if r["cve"] and r["epss"] is not None and r["epss"] < 0.05})
+    st.markdown(
+        f"**The scanners produced {len(ranked)} distinct findings ({n_cves} unique CVEs). "
+        f"{n_kev} {'is' if n_kev == 1 else 'are'} in CISA KEV; {n_rare} have an EPSS below 0.05.**"
+    )
     left, right = st.columns(2)
     left.markdown(
-        f"**Looks urgent, is not.** {drop['id']} has CVSS {drop['cvss']} "
-        f"(#{drop['cvss_rank']} by severity) but ScoreRisk puts it at **#{drop['rank']}**: "
-        f"EPSS {drop['epss']:.3f}, {'in' if drop['kev'] else 'not in'} CISA KEV, internal asset.  \n"
-        f"_{drop['title']}_"
+        f"**Looks urgent, is not.** {drop['title']} has CVSS {drop['cvss']} "
+        f"(#{drop['cvss_rank']} by severity) but ScoreRisk puts it at **#{drop['rank']}**: {describe(drop)}."
     )
     right.markdown(
-        f"**Looks minor, is not.** {rise['id']} has CVSS {rise['cvss']} "
-        f"(#{rise['cvss_rank']} by severity) but ScoreRisk puts it at **#{rise['rank']}**: "
-        f"EPSS {rise['epss']:.3f}, {'in' if rise['kev'] else 'not in'} CISA KEV, internet-facing.  \n"
-        f"_{rise['title']}_"
+        f"**Looks minor, is not.** {rise['title']} has CVSS {rise['cvss']} "
+        f"(#{rise['cvss_rank']} by severity) but ScoreRisk puts it at **#{rise['rank']}**: {describe(rise)}."
     )
 
     statuses = {}
@@ -157,39 +225,50 @@ with tab_queue:
         "asset exposure is declared in a fictional practice inventory."
     )
 
+    def short_label(r):
+        head, _, tail = r["id"].partition(":")
+        return head if r["scanner"].startswith("pip-audit") else tail
+
+    labelled = {r["id"] for r in ranked[:10]} | {drop["id"], rise["id"]}
     chart_df = pd.DataFrame(
         [
             {
-                "Finding": r["id"], "CVSS": r["cvss"], "ScoreRisk": r["pre_score"],
+                "Finding": r["id"], "CVSS": r["cvss"], "ScoreRisk": r["pre_score"], "Label": short_label(r),
+                "Show label": r["id"] in labelled,
                 "CISA KEV": "in KEV" if r["kev"] else "not in KEV", "Title": r["title"],
             }
             for r in ranked
+            if r["cvss"] is not None
         ]
     )
     base = alt.Chart(chart_df).encode(
-        x=alt.X("CVSS:Q", scale=alt.Scale(domain=[7, 10.3]), title="CVSS base score (severity)"),
+        x=alt.X("CVSS:Q", scale=alt.Scale(domain=[2, 10.4]), title="CVSS base score (severity)"),
         y=alt.Y("ScoreRisk:Q", scale=alt.Scale(domain=[0, 108]), title="ScoreRisk (exploitability + exposure)"),
     )
-    points = base.mark_circle(size=150).encode(
+    points = base.mark_circle(size=90, opacity=0.75).encode(
         color=alt.Color(
             "CISA KEV:N", scale=alt.Scale(domain=["in KEV", "not in KEV"], range=["#e8710a", "#4c78a8"])
         ),
         tooltip=["Finding", "Title", "CVSS", "ScoreRisk", "CISA KEV"],
     )
-    # One label per cluster of overlapping points, so no label hides another.
-    chart_df["cluster"] = list(zip(chart_df["CVSS"], (chart_df["ScoreRisk"] / 4).round()))
+    # Label only the interesting points, one label per cluster so none hides another.
+    shown = chart_df[chart_df["Show label"]].copy()
+    shown["cluster"] = list(zip(shown["CVSS"], (shown["ScoreRisk"] / 4).round()))
     label_df = (
-        chart_df.groupby("cluster")
-        .agg(CVSS=("CVSS", "first"), ScoreRisk=("ScoreRisk", "max"), Finding=("Finding", ", ".join))
+        shown.groupby("cluster")
+        .agg(CVSS=("CVSS", "first"), ScoreRisk=("ScoreRisk", "max"), Label=("Label", lambda s: ", ".join(sorted(set(s)))))
         .reset_index(drop=True)
     )
     labels = (
         alt.Chart(label_df)
         .mark_text(dy=-14, fontSize=11)
-        .encode(x="CVSS:Q", y="ScoreRisk:Q", text="Finding:N")
+        .encode(x="CVSS:Q", y="ScoreRisk:Q", text="Label:N")
     )
-    st.altair_chart((points + labels).properties(height=360), width="stretch")
-    st.caption("Same CVSS, very different urgency: severity alone is the source of the noise.")
+    st.altair_chart((points + labels).properties(height=380), width="stretch")
+    st.caption(
+        "Each dot is a finding. Severity alone (left to right) says little about urgency (bottom to top); "
+        "most of the scanner's output sits low on the vertical axis."
+    )
 
 # ---------- 2. before / after ----------
 with tab_proof:
@@ -228,6 +307,13 @@ with tab_proof:
         )
         with st.expander("Patch written by Nemotron (diff)"):
             st.code(patch["diff"], language="diff")
+        st.download_button(
+            "Download this patch (.diff)",
+            data=patch["diff"],
+            file_name=f"{by_id.get(fid, {}).get('cwe') or fid}.diff".replace(":", "_"),
+            mime="text/plain",
+            key=f"dl_{fid}",
+        )
 
 # ---------- 2b. public evidence (Tavily) ----------
 with tab_evidence:
@@ -295,8 +381,10 @@ reliable as its inputs, and asset exposure is declared in a fictional practice i
     st.markdown(
         f"**Data snapshot:** fetched {threat['fetched_at'][:10]}, CISA KEV catalog "
         f"{threat['sources']['kev_catalog_version']} ({threat['sources']['kev_total']} entries). "
-        "CVE, EPSS, KEV and CVSS values are real. The inventory and the exposure of its assets are a "
-        "fictional practice project, and the weights are starting points, not validated values."
+        "The findings are real scanner output (pip-audit over deliberately outdated pinned packages, "
+        "Bandit over our practice app) and the CVE, EPSS, KEV and CVSS values are real. Which asset each "
+        "finding belongs to and how exposed it is are declared assumptions of a fictional project, and the "
+        "weights are starting points, not validated values."
     )
     if sensitivity:
         st.markdown(f"**Robustness check:** {sensitivity['configurations_tested']} weight/constant combinations")
@@ -328,3 +416,15 @@ Nebius Token Factory Sandboxes run every exploit, test and model-written patch i
 Live execution is not exposed in this public page, to protect the credits behind it.
 """
     )
+    isolation_path = EVIDENCE / "isolation_check.json"
+    if isolation_path.exists():
+        isolation = json.loads(isolation_path.read_text(encoding="utf-8"))
+        with st.expander("What the sandbox can see (observed, not promised)"):
+            st.caption(
+                f"Recorded {isolation['checked_at'][:10]} by `isolation_check.py`, inside the same sandbox the judge uses. "
+                "Network egress is not blocked and code runs as root inside the VM; "
+                "isolation here means nothing sensitive is placed in it."
+            )
+            for name, output in isolation["results"].items():
+                st.markdown(f"**{name}**")
+                st.code(output or "(empty)", language="text", wrap_lines=True)
