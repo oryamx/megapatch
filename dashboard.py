@@ -15,6 +15,7 @@ import streamlit as st
 
 os.chdir(Path(__file__).resolve().parent)  # data/ and evidence/ are relative to this folder
 
+from bands import EPSS_ATTEND, band_for  # noqa: E402
 from scorerisk import score_all  # noqa: E402
 
 EVIDENCE = Path("evidence")
@@ -119,13 +120,17 @@ with tab_queue:
         for item in run["final_order"]:
             statuses[item["id"]] = status_label(item["status"])
             final_pos[item["id"]] = item["position"]
+    verdict_of = {fid: v["verdict"] for fid, v in (run or {}).get("verdicts", {}).items()}
     rows = []
     for r in sorted(ranked, key=lambda x: final_pos.get(x["id"], 1000 + x["rank"])):
+        band, basis = band_for(r, verdict_of.get(r["id"]))
         rows.append(
             {
                 "Queue #": final_pos.get(r["id"], r["rank"]),
                 "Finding": r["id"],
                 "Title": r["title"],
+                "Band": band,
+                "Basis for the band": basis,
                 "ScoreRisk": r["pre_score"],
                 "ScoreRisk rank": r["rank"],
                 "CVSS": r["cvss"],
@@ -147,7 +152,9 @@ with tab_queue:
     )
     st.caption(
         "Confirmed findings jump to the top of the queue regardless of their pre-score. "
-        "Findings without a PoC are ranked but reported as not verifiable, never as safe."
+        "Findings without a PoC are ranked but reported as not verifiable, never as safe. "
+        "Bands are a simplified mapping inspired by CISA's SSVC, not the official decision tree; "
+        "asset exposure is declared in a fictional practice inventory."
     )
 
     chart_df = pd.DataFrame(
@@ -267,6 +274,22 @@ with tab_why:
 
 CVSS weighs little on purpose: over-weighting it is exactly what creates the noise.
 The same input always produces the same ranking, so the number is auditable.
+"""
+    )
+    st.markdown(
+        f"""
+**Action bands** (names borrowed from CISA's SSVC: Act, Attend, Track\\*, Track). This is a **simplified,
+project-specific rule table, not CISA's decision tree**:
+
+| Band | Rule | Meaning |
+|---|---|---|
+| Act | Exploit confirmed in the sandbox, or in KEV and internet-facing | Handle first |
+| Attend | In KEV but internal, or EPSS at or above {EPSS_ATTEND:.2f} | Handle sooner than the normal cycle |
+| Track\\* | Internet-facing with no exploitation evidence | Watch closely |
+| Track | No strong signal | Normal patch cycle |
+
+The EPSS threshold ({EPSS_ATTEND:.2f}) is a project parameter, not an SSVC value. A band is only as
+reliable as its inputs, and asset exposure is declared in a fictional practice inventory.
 """
     )
     st.markdown(

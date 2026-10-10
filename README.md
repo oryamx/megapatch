@@ -66,6 +66,19 @@ streamlit run dashboard.py
 
 The dashboard shows the prioritized queue, the before/after proof for each patch, the public evidence for findings that execution cannot verify, and why the order is what it is. It reads the latest file in `evidence/` and needs no credentials.
 
+## Action bands
+
+Each finding gets a band named after CISA's SSVC outcomes (Act, Attend, Track\*, Track). This is a **simplified, project-specific rule table, not CISA's SSVC decision tree**, defined in `bands.py`:
+
+| Band | Rule |
+|---|---|
+| Act | Exploit confirmed in the sandbox, or in CISA KEV and internet-facing |
+| Attend | In KEV but internal, or EPSS at or above a project parameter (0.50) |
+| Track\* | Internet-facing with no exploitation evidence |
+| Track | No strong signal |
+
+Every band shows its basis. Asset exposure is declared in the practice inventory, so a band for a finding that was not verified by execution (for example Log4Shell) is a reference case built from KEV/EPSS plus declared exposure, not a result of the run.
+
 ## What the data is (and is not)
 
 - **Real:** CVE identifiers, EPSS (FIRST), CISA KEV membership and CVSS base scores (NVD), frozen in `data/threat_data.json` so results are reproducible. Refresh with `python fetch_threat_data.py`.

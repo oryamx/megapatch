@@ -60,6 +60,7 @@ def score_all():
         rows.append(
             {
                 "id": f["id"], "title": f["title"], "cve": f["cve"], "cwe": f.get("cwe"), "asset": f["asset"],
+                "internet_facing": f["exposure"]["internet_facing"],
                 "cvss": cvss, "epss": threat["epss"][f["cve"]]["epss"] if f["cve"] else None,
                 "kev": bool(f["cve"] and f["cve"] in threat["kev"]),
                 "E": round(e, 3), "X": round(x, 3), "S": round(s, 3), "E_note": e_note,
