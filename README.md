@@ -6,6 +6,8 @@ Built for the Nebius x NVIDIA Global AI Hackathon 2026 (track: Coding and Agenti
 
 > Status: work in progress, hackathon submission due 2026-10-30. This README only describes what exists today.
 
+**Live demo (read-only dashboard):** https://megapatch.streamlit.app/ — it shows a recorded real run. If the page says the app is asleep, press the wake-up button (free hosting sleeps after inactivity; it is back in about a minute). Everything in it can also be reproduced offline with `python judge_check.py`.
+
 ## The idea
 
 A scanner gives you thousands of findings, all with a CVSS score, so everything looks critical. MegaPatch does three things in one flow:

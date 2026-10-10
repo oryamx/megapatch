@@ -4,6 +4,7 @@ Every call appends one JSON line to logs/usage.jsonl. Read it with usage_report.
 """
 import json
 import os
+import threading
 import time
 from datetime import datetime, timezone
 from pathlib import Path
@@ -20,6 +21,7 @@ MODEL = os.getenv("NEBIUS_MODEL", "nvidia/nemotron-3-super-120b-a12b")
 PRICE_IN_PER_M = float(os.getenv("PRICE_IN_PER_M", "0.30"))
 PRICE_OUT_PER_M = float(os.getenv("PRICE_OUT_PER_M", "0.90"))
 LOG_PATH = Path(__file__).parent / "logs" / "usage.jsonl"
+_LOG_LOCK = threading.Lock()  # the pipeline calls chat() from several threads
 
 
 def usage_lines():
@@ -64,9 +66,10 @@ def chat(purpose, messages, **kwargs):
         "latency_s": round(latency, 2),
         "est_cost_usd": round(cost, 6),
     }
-    LOG_PATH.parent.mkdir(exist_ok=True)
-    with LOG_PATH.open("a", encoding="utf-8") as f:
-        f.write(json.dumps(record) + "\n")
+    with _LOG_LOCK:
+        LOG_PATH.parent.mkdir(exist_ok=True)
+        with LOG_PATH.open("a", encoding="utf-8") as f:
+            f.write(json.dumps(record) + "\n")
 
     print(
         f"[usage] {purpose}: in={usage.prompt_tokens} out={usage.completion_tokens} "

@@ -3,6 +3,7 @@
 Run against another folder with:  $env:APP_DIR = "reference_patch"
 """
 import os
+import tempfile
 
 import pytest
 
@@ -33,6 +34,23 @@ def test_lookup_echoes_the_host(client):
 
 
 def test_files_serves_a_public_file(client):
+    resp = client.get("/files", query_string={"name": "readme.txt"})
+    assert resp.status_code == 200
+    assert "Welcome" in resp.get_json()["content"]
+
+
+def test_files_work_when_the_data_dir_is_reached_through_a_symlink(tmp_path, monkeypatch):
+    """Patches that compare a resolved path with an unresolved one break when the temp
+    dir is a symlink (the default on macOS). Linux judges must catch that too."""
+    real = tmp_path / "real"
+    real.mkdir()
+    link = tmp_path / "link"
+    try:
+        os.symlink(real, link, target_is_directory=True)
+    except (OSError, NotImplementedError):
+        pytest.skip("symlinks are not available on this machine")
+    monkeypatch.setattr(tempfile, "tempdir", str(link))
+    client = load_app(os.environ.get("APP_DIR", "target_app")).test_client()
     resp = client.get("/files", query_string={"name": "readme.txt"})
     assert resp.status_code == 200
     assert "Welcome" in resp.get_json()["content"]

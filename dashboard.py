@@ -187,6 +187,19 @@ with tab_proof:
             f"**Result: {'patch accepted (red to green)' if accepted else 'patch not accepted'}** · "
             f"approval: {patch.get('approval', 'human (older run format)')}"
         )
+        for earlier in patch.get("attempt_history", []):
+            with st.expander(f"Attempt {earlier['attempt']} was rejected by the judge, then Nemotron repaired it"):
+                st.markdown(
+                    "Same exploit, same tests. The judge's output was handed back to the model, "
+                    "which wrote the next attempt."
+                )
+                st.code(
+                    (earlier.get("poc_output") or "") + "\n\ntests: "
+                    + ((earlier.get("tests_output") or "").strip().splitlines() or ["n/a"])[-1],
+                    language="text",
+                    wrap_lines=True,
+                )
+                st.code(earlier["diff"], language="diff")
         before, after = st.columns(2)
         before.markdown("**Before: the exploit runs on the vulnerable app (sandbox)**")
         before.code(run["verdicts"][fid]["evidence"], language="text", wrap_lines=True)

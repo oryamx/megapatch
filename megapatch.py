@@ -6,6 +6,7 @@ Usage:
   python megapatch.py --yes          skip the human approval question
   python megapatch.py --eval-only    reuse the existing candidate patches (no model call)
   python megapatch.py --local        judge on this machine instead of the sandbox
+  python megapatch.py --no-enrich    skip the Tavily public-evidence step
 
 Patch generation always calls Nemotron on Nebius Token Factory.
 "The score proposes, execution disposes": ScoreRisk orders the findings, the
@@ -14,6 +15,7 @@ sandbox PoC decides which are real, and the same PoC re-tests the fix.
 import argparse
 import json
 import time
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -24,6 +26,7 @@ from catalog import CLASSES
 from scorerisk import score_all
 
 EVIDENCE_DIR = Path("evidence")
+WORKERS = 4  # independent sandbox runs, searches and model calls go in parallel
 
 
 def verdict_for(finding, judge):
@@ -47,28 +50,35 @@ def main():
     started = time.time()
     calls_before = len(llm.usage_lines())
     judge, where = loop.choose_judge(args.local)
+    if not args.local:
+        from sandbox_judge import warm_up
+
+        warm_up()  # build the dependency checkpoint once, before parallel runs
 
     ranked, threat = score_all()
+    top = ranked[: args.top]
     print(f"=== 1. ScoreRisk (rule, not a model) | threat data from {threat['fetched_at'][:10]} ===")
-    for r in ranked[: args.top]:
+    for r in top:
         print(f"  #{r['rank']} {r['id']} score {r['pre_score']:>5}  CVSS {r['cvss']:>4}  {r['title']}")
 
     print(f"\n=== 2. Verification of the top {args.top} in {where} ===")
-    verdicts = {}
-    for r in ranked[: args.top]:
-        verdicts[r["id"]] = verdict_for(r, judge)
+    with ThreadPoolExecutor(max_workers=WORKERS) as pool:
+        verdict_list = list(pool.map(lambda r: verdict_for(r, judge), top))
+    verdicts = {r["id"]: v for r, v in zip(top, verdict_list)}
+    for r in top:
         print(f"  {r['id']}: {verdicts[r['id']]['verdict']}")
 
     enrichment = {}
     to_enrich = [
-        r for r in ranked[: args.top]
+        r for r in top
         if verdicts[r["id"]]["verdict"] == "NOT_VERIFIABLE" and r["cve"] and not args.no_enrich
     ]
     if to_enrich:
         print("\n=== 2b. Public evidence for what execution cannot verify (Tavily + Nemotron) ===")
-        for r in to_enrich:
-            enrichment[r["id"]] = enrich.enrich_finding(r)
-            info = enrichment[r["id"]]
+        with ThreadPoolExecutor(max_workers=WORKERS) as pool:
+            infos = list(pool.map(enrich.enrich_finding, to_enrich))
+        for r, info in zip(to_enrich, infos):
+            enrichment[r["id"]] = info
             if "skipped" in info or "error" in info:
                 print(f"  {r['id']}: skipped ({info.get('skipped') or info.get('error')})")
             else:
@@ -80,21 +90,31 @@ def main():
                 )
 
     print("\n=== 3. Patch + re-test ===")
+    confirmed_rows = [r for r in top if verdicts[r["id"]]["verdict"] == "CONFIRMED"]
+    prepared = False
+    if confirmed_rows and not args.eval_only:
+        print(f"  asking Nemotron for {len(confirmed_rows)} patch(es) in parallel ...")
+        with ThreadPoolExecutor(max_workers=WORKERS) as pool:
+            list(pool.map(
+                lambda r: loop.generate_candidate(r["cwe"], verdicts[r["id"]]["evidence"]), confirmed_rows
+            ))
+        prepared = True
+
     patches = {}
-    for r in ranked[: args.top]:
-        if verdicts[r["id"]]["verdict"] == "CONFIRMED":
-            print(f"\n--- {r['id']}: {r['title']} ---")
-            patches[r["id"]] = loop.patch_cycle(
-                judge, where, r["cwe"], verdicts[r["id"]]["evidence"],
-                auto_yes=args.yes, generate=not args.eval_only,
-            )
+    for r in confirmed_rows:
+        print(f"\n--- {r['id']}: {r['title']} ---")
+        patches[r["id"]] = loop.patch_cycle(
+            judge, where, r["cwe"], verdicts[r["id"]]["evidence"],
+            auto_yes=args.yes, generate=not args.eval_only, prepared=prepared,
+        )
     if not patches:
         print("  nothing confirmed, nothing to patch")
 
     def status(finding_id):
         patch = patches.get(finding_id)
         if patch and patch["accepted"]:
-            return "CONFIRMED -> PATCHED, same PoC now fails"
+            extra = f" (after {patch['attempts']} attempts)" if patch.get("attempts", 1) > 1 else ""
+            return "CONFIRMED -> PATCHED, same PoC now fails" + extra
         if patch and not patch["approved"]:
             return "CONFIRMED -> patch proposed, not run (no approval)"
         if patch:

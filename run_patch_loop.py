@@ -1,5 +1,8 @@
 """Patch loop: Nemotron writes a patch, then the SAME PoC and tests judge it.
 
+If the judge rejects a patch, Nemotron gets the judge's output and tries once more
+(MAX_ATTEMPTS). A human approves every candidate before it runs.
+
 Usage:
   python run_patch_loop.py [--cwe CWE-89]   generate a patch, show diff, ask approval, judge it in the Nebius sandbox
   python run_patch_loop.py --yes            same, without the approval question
@@ -23,6 +26,7 @@ from llm import chat
 
 TARGET = Path("target_app")
 CANDIDATES = Path("candidates")
+MAX_ATTEMPTS = 2
 
 SYSTEM = (
     "You are a senior application security engineer. "
@@ -43,6 +47,21 @@ Return the complete fixed app.py in ONE ```python block and nothing else.
 Rules: keep create_app() and ALL routes with the same JSON response shape (the
 other routes must keep working exactly as before); fix only this vulnerability,
 at its root cause (no blacklists or character filtering); do not add dependencies."""
+
+REPAIR_SUFFIX = """
+
+Your previous patch was REJECTED by the judge.
+
+Previous patch (full app.py):
+```python
+{previous}
+```
+
+Judge output:
+{judge_output}
+
+Fix the problem. Return the complete corrected app.py in ONE ```python block and
+nothing else, following the same rules."""
 
 
 def candidate_dir(cwe):
@@ -86,14 +105,19 @@ def extract_code(text):
     return (match.group(1) if match else text).strip() + "\n"
 
 
-def generate_candidate(cwe, evidence):
+def generate_candidate(cwe, evidence, feedback=None):
+    """Ask Nemotron for a patch. `feedback` = judge output of a rejected attempt (repair)."""
     info = CLASSES[cwe]
     source = (TARGET / "app.py").read_text(encoding="utf-8")
     prompt = USER_TEMPLATE.format(
         name=info["name"], cwe=cwe, route=info["route"], poc_output=evidence, source=source
     )
+    if feedback:
+        prompt += REPAIR_SUFFIX.format(
+            previous=feedback["previous"], judge_output=feedback["judge_output"][-1500:]
+        )
     response = chat(
-        f"generate_patch:{cwe}",
+        f"generate_patch:{cwe}" + (":repair" if feedback else ""),
         [{"role": "system", "content": SYSTEM}, {"role": "user", "content": prompt}],
         temperature=0.2,
         max_tokens=6000,  # reasoning tokens count against this budget
@@ -111,39 +135,65 @@ def diff_text(cwe):
     return "".join(difflib.unified_diff(old, new, "target_app/app.py", f"candidates/{cwe}/app.py"))
 
 
-def patch_cycle(judge, where, cwe, evidence, auto_yes=False, generate=True):
-    """Generate (optional), show the diff, ask a human, judge. Returns a result dict."""
-    if generate:
-        generate_candidate(cwe, evidence)
+def patch_cycle(judge, where, cwe, evidence, auto_yes=False, generate=True, prepared=False):
+    """Generate, show the diff, ask a human, judge; on rejection repair once.
+
+    `prepared=True` means the first candidate was already generated (in parallel).
+    Returns a result dict describing the last attempt, plus the earlier ones.
+    """
     cand = candidate_dir(cwe)
-    if not (cand / "app.py").exists():
-        sys.exit(f"No candidate for {cwe} yet. Run without --eval-only first.")
+    max_attempts = MAX_ATTEMPTS if generate else 1
+    attempts, feedback, human_wait = [], None, 0.0
 
-    diff = diff_text(cwe)
-    print("\n=== PROPOSED PATCH (diff) ===")
-    print(diff)
+    for attempt in range(1, max_attempts + 1):
+        if generate and not (attempt == 1 and prepared):
+            generate_candidate(cwe, evidence, feedback=feedback)
+        if not (cand / "app.py").exists():
+            sys.exit(f"No candidate for {cwe} yet. Run without --eval-only first.")
 
-    human_wait = 0.0
-    if not auto_yes:
-        # The patch is model-written code: a human looks before anything runs.
-        asked_at = time.time()
-        answer = input(f"Run this candidate against the PoC and tests in {where}? [y/N] ")
-        human_wait = time.time() - asked_at
-        if answer.strip().lower() != "y":
-            print("Not run. Nothing was executed.")
-            return {"approved": False, "accepted": False, "diff": diff, "human_wait_s": human_wait}
+        diff = diff_text(cwe)
+        print(f"\n=== PROPOSED PATCH, attempt {attempt} (diff) ===")
+        print(diff)
 
-    poc_code, poc_out, test_code, test_out = judge(cand, CLASSES[cwe]["poc"])
-    print("\n=== JUDGE ===")
-    print(poc_out)
-    print(f"tests: {test_out.splitlines()[-1] if test_out else 'no output'}")
-    accepted = poc_code == 0 and test_code == 0
-    print("VERDICT:", "PATCH ACCEPTED (red -> green)" if accepted else "PATCH REJECTED")
+        if not auto_yes:
+            # The patch is model-written code: a human looks before anything runs.
+            asked_at = time.time()
+            answer = input(f"Run this candidate against the PoC and tests in {where}? [y/N] ")
+            human_wait += time.time() - asked_at
+            if answer.strip().lower() != "y":
+                print("Not run. Nothing was executed.")
+                attempts.append({"attempt": attempt, "approved": False, "accepted": False, "diff": diff})
+                break
+
+        poc_code, poc_out, test_code, test_out = judge(cand, CLASSES[cwe]["poc"])
+        print("\n=== JUDGE ===")
+        print(poc_out)
+        print(f"tests: {test_out.splitlines()[-1] if test_out else 'no output'}")
+        accepted = poc_code == 0 and test_code == 0
+        print("VERDICT:", "PATCH ACCEPTED (red -> green)" if accepted else "PATCH REJECTED")
+        attempts.append(
+            {
+                "attempt": attempt, "approved": True, "accepted": accepted, "diff": diff,
+                "poc_exit": poc_code, "poc_output": poc_out,
+                "tests_exit": test_code, "tests_output": test_out,
+            }
+        )
+        if accepted:
+            break
+        feedback = {
+            "previous": (cand / "app.py").read_text(encoding="utf-8"),
+            "judge_output": f"{poc_out}\n{test_out}",
+        }
+        if attempt < max_attempts:
+            print("Rejected: asking Nemotron to repair it with the judge's output.")
+
+    last = attempts[-1]
     return {
-        "approved": True, "accepted": accepted, "diff": diff, "human_wait_s": human_wait,
+        **last,
+        "attempts": len(attempts),
+        "attempt_history": attempts[:-1],
+        "human_wait_s": human_wait,
         "approval": "auto (--yes)" if auto_yes else "human",
-        "poc_exit": poc_code, "poc_output": poc_out,
-        "tests_exit": test_code, "tests_output": test_out,
     }
 
 

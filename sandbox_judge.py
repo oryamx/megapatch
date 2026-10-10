@@ -36,6 +36,11 @@ def _environment():
     return _env
 
 
+def warm_up():
+    """Create the dependency checkpoint once, before any parallel judging."""
+    _environment()
+
+
 def judge_in_sandbox(app_dir, poc, run_tests=True):
     """Return (poc_exit, poc_output, tests_exit, tests_output) for app_dir/app.py.
 
