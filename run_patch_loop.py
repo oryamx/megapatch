@@ -3,7 +3,7 @@
 Where the human sits:
 - Sandbox (default): model-written code runs only inside the isolated Nebius sandbox,
   which holds no secrets and touches nothing real, so it runs automatically. A human
-  approves the VERIFIED patch before it is exported (the real effect).
+  approves the patch the judge accepted before it is exported (the real effect).
 - --local: the judge runs on this machine, so a human approves BEFORE it runs.
 - --yes skips every question (development only; the evidence labels it).
 
@@ -21,14 +21,13 @@ execution disposes"). megapatch.py reuses these functions.
 """
 import argparse
 import difflib
-import os
 import re
-import subprocess
 import sys
 import time
 from pathlib import Path
 
 from catalog import CLASSES
+from judge import is_accepted, judge_local  # the acceptance rule and the local executor live in judge.py
 from llm import chat
 
 TARGET = Path("target_app")
@@ -75,21 +74,6 @@ nothing else, following the same rules."""
 
 def candidate_dir(cwe):
     return CANDIDATES / cwe
-
-
-def run(cmd, env=None):
-    proc = subprocess.run(cmd, capture_output=True, text=True, env=env)
-    return proc.returncode, (proc.stdout + proc.stderr).strip()
-
-
-def judge_local(app_dir, poc, run_tests=True):
-    """Judge on THIS machine. Same contract as judge_in_sandbox."""
-    poc_code, poc_out = run([sys.executable, poc, str(app_dir)])
-    if not run_tests:
-        return poc_code, poc_out, None, ""
-    env = {**os.environ, "APP_DIR": str(app_dir)}
-    test_code, test_out = run([sys.executable, "-m", "pytest", "-q"], env=env)
-    return poc_code, poc_out, test_code, test_out
 
 
 def choose_judge(local):
@@ -186,7 +170,7 @@ def patch_cycle(judge, where, cwe, evidence, auto_yes=False, generate=True, prep
         print("\n=== JUDGE ===")
         print(poc_out)
         print(f"tests: {test_out.splitlines()[-1] if test_out else 'no output'}")
-        accepted = poc_code == 0 and test_code == 0
+        accepted = is_accepted(poc_code, test_code)
         print("VERDICT:", "PATCH ACCEPTED (red -> green)" if accepted else "PATCH REJECTED")
         attempts.append(
             {
@@ -209,7 +193,9 @@ def patch_cycle(judge, where, cwe, evidence, auto_yes=False, generate=True, prep
         if auto_yes:
             exported = True
         else:
-            exported, waited = ask("Export this VERIFIED patch (write the diff to out/patches/)? [y/N] ")
+            exported, waited = ask(
+                "Export this patch, accepted by the judge (write the diff to out/patches/)? [y/N] "
+            )
             human_wait += waited
         if exported:
             EXPORTS.mkdir(parents=True, exist_ok=True)
@@ -217,12 +203,12 @@ def patch_cycle(judge, where, cwe, evidence, auto_yes=False, generate=True, prep
             Path(export_path).write_text(last["diff"], encoding="utf-8")
             print(f"Exported {export_path}")
         else:
-            print("Not exported. The verified patch stays in the evidence only.")
+            print("Not exported. The judge-accepted patch stays in the evidence only.")
 
     if auto_yes:
         approval = "auto (--yes)"
     elif sandboxed:
-        approval = "human, on the verified patch (the sandbox ran it automatically)"
+        approval = "human, on the judge-accepted patch (the sandbox ran it automatically)"
     else:
         approval = "human, before running on this machine and before export"
     return {

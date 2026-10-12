@@ -1,0 +1,827 @@
+{
+  "run_at": "20261010T172955Z",
+  "executor": "the Nebius sandbox",
+  "top_n": 8,
+  "model": "nvidia/nemotron-3-super-120b-a12b",
+  "inventory_fingerprint": "3adeadfc2a45e59b",
+  "fingerprint_version": 2,
+  "final_order": [
+    {
+      "position": 1,
+      "id": "bandit:CWE-78",
+      "scorerisk_rank": 2,
+      "pre_score": 64.6,
+      "cvss": 9.8,
+      "status": "CONFIRMED -> PATCHED, same PoC now fails"
+    },
+    {
+      "position": 2,
+      "id": "bandit:CWE-89",
+      "scorerisk_rank": 3,
+      "pre_score": 64.6,
+      "cvss": 9.8,
+      "status": "CONFIRMED -> PATCHED, same PoC now fails"
+    },
+    {
+      "position": 3,
+      "id": "manual:CWE-22",
+      "scorerisk_rank": 4,
+      "pre_score": 60.0,
+      "cvss": 7.5,
+      "status": "CONFIRMED -> patch verified in the sandbox, export not approved"
+    },
+    {
+      "position": 4,
+      "id": "pillow:PYSEC-2026-1794",
+      "scorerisk_rank": 1,
+      "pre_score": 97.6,
+      "cvss": 8.8,
+      "status": "NOT_VERIFIABLE"
+    },
+    {
+      "position": 5,
+      "id": "pillow:PYSEC-2023-175",
+      "scorerisk_rank": 5,
+      "pre_score": 55.0,
+      "cvss": null,
+      "status": "NOT_VERIFIABLE"
+    },
+    {
+      "position": 6,
+      "id": "pillow:PYSEC-2026-3493",
+      "scorerisk_rank": 6,
+      "pre_score": 48.5,
+      "cvss": 9.1,
+      "status": "NOT_VERIFIABLE"
+    },
+    {
+      "position": 7,
+      "id": "jinja2:PYSEC-2026-1471",
+      "scorerisk_rank": 7,
+      "pre_score": 47.9,
+      "cvss": 8.8,
+      "status": "NOT_VERIFIABLE"
+    },
+    {
+      "position": 8,
+      "id": "jinja2:PYSEC-2026-1472",
+      "scorerisk_rank": 8,
+      "pre_score": 47.8,
+      "cvss": 8.8,
+      "status": "NOT_VERIFIABLE"
+    },
+    {
+      "position": 9,
+      "id": "pillow:PYSEC-2026-457",
+      "scorerisk_rank": 9,
+      "pre_score": 47.1,
+      "cvss": 8.1,
+      "status": "not verified (outside top N)"
+    },
+    {
+      "position": 10,
+      "id": "werkzeug:PYSEC-2026-2043",
+      "scorerisk_rank": 10,
+      "pre_score": 46.7,
+      "cvss": 7.5,
+      "status": "not verified (outside top N)"
+    },
+    {
+      "position": 11,
+      "id": "pillow:PYSEC-2026-3454",
+      "scorerisk_rank": 11,
+      "pre_score": 46.6,
+      "cvss": 8.2,
+      "status": "not verified (outside top N)"
+    },
+    {
+      "position": 12,
+      "id": "jinja2:PYSEC-2026-1475",
+      "scorerisk_rank": 12,
+      "pre_score": 45.9,
+      "cvss": 7.8,
+      "status": "not verified (outside top N)"
+    },
+    {
+      "position": 13,
+      "id": "werkzeug:PYSEC-2023-58",
+      "scorerisk_rank": 13,
+      "pre_score": 45.7,
+      "cvss": 7.5,
+      "status": "not verified (outside top N)"
+    },
+    {
+      "position": 14,
+      "id": "flask:PYSEC-2023-62",
+      "scorerisk_rank": 14,
+      "pre_score": 45.6,
+      "cvss": 7.5,
+      "status": "not verified (outside top N)"
+    },
+    {
+      "position": 15,
+      "id": "pillow:PYSEC-2023-227",
+      "scorerisk_rank": 15,
+      "pre_score": 45.6,
+      "cvss": 7.5,
+      "status": "not verified (outside top N)"
+    },
+    {
+      "position": 16,
+      "id": "werkzeug:PYSEC-2023-221",
+      "scorerisk_rank": 16,
+      "pre_score": 45.5,
+      "cvss": 7.5,
+      "status": "not verified (outside top N)"
+    },
+    {
+      "position": 17,
+      "id": "werkzeug:PYSEC-2026-1860",
+      "scorerisk_rank": 17,
+      "pre_score": 45.5,
+      "cvss": 7.5,
+      "status": "not verified (outside top N)"
+    },
+    {
+      "position": 18,
+      "id": "werkzeug:PYSEC-2026-3417",
+      "scorerisk_rank": 18,
+      "pre_score": 45.5,
+      "cvss": 7.5,
+      "status": "not verified (outside top N)"
+    },
+    {
+      "position": 19,
+      "id": "pillow:PYSEC-2026-2253",
+      "scorerisk_rank": 19,
+      "pre_score": 45.2,
+      "cvss": 7.5,
+      "status": "not verified (outside top N)"
+    },
+    {
+      "position": 20,
+      "id": "pillow:PYSEC-2026-2254",
+      "scorerisk_rank": 20,
+      "pre_score": 45.2,
+      "cvss": 7.5,
+      "status": "not verified (outside top N)"
+    },
+    {
+      "position": 21,
+      "id": "pillow:PYSEC-2026-2255",
+      "scorerisk_rank": 21,
+      "pre_score": 45.2,
+      "cvss": 7.5,
+      "status": "not verified (outside top N)"
+    },
+    {
+      "position": 22,
+      "id": "pillow:PYSEC-2026-2256",
+      "scorerisk_rank": 22,
+      "pre_score": 45.2,
+      "cvss": 7.5,
+      "status": "not verified (outside top N)"
+    },
+    {
+      "position": 23,
+      "id": "pillow:PYSEC-2026-3451",
+      "scorerisk_rank": 23,
+      "pre_score": 45.2,
+      "cvss": 7.5,
+      "status": "not verified (outside top N)"
+    },
+    {
+      "position": 24,
+      "id": "pillow:PYSEC-2026-3453",
+      "scorerisk_rank": 24,
+      "pre_score": 45.2,
+      "cvss": 7.5,
+      "status": "not verified (outside top N)"
+    },
+    {
+      "position": 25,
+      "id": "pillow:PYSEC-2026-3494",
+      "scorerisk_rank": 25,
+      "pre_score": 45.2,
+      "cvss": 7.5,
+      "status": "not verified (outside top N)"
+    },
+    {
+      "position": 26,
+      "id": "pillow:PYSEC-2026-3495",
+      "scorerisk_rank": 26,
+      "pre_score": 45.2,
+      "cvss": 7.5,
+      "status": "not verified (outside top N)"
+    },
+    {
+      "position": 27,
+      "id": "pillow:PYSEC-2026-3496",
+      "scorerisk_rank": 27,
+      "pre_score": 45.2,
+      "cvss": 7.5,
+      "status": "not verified (outside top N)"
+    },
+    {
+      "position": 28,
+      "id": "cryptography:PYSEC-2026-800",
+      "scorerisk_rank": 28,
+      "pre_score": 44.6,
+      "cvss": 7.4,
+      "status": "not verified (outside top N)"
+    },
+    {
+      "position": 29,
+      "id": "jinja2:PYSEC-2026-1473",
+      "scorerisk_rank": 29,
+      "pre_score": 42.6,
+      "cvss": 6.1,
+      "status": "not verified (outside top N)"
+    },
+    {
+      "position": 30,
+      "id": "pillow:PYSEC-2026-1793",
+      "scorerisk_rank": 30,
+      "pre_score": 42.3,
+      "cvss": 5.9,
+      "status": "not verified (outside top N)"
+    },
+    {
+      "position": 31,
+      "id": "jinja2:PYSEC-2026-1474",
+      "scorerisk_rank": 31,
+      "pre_score": 41.3,
+      "cvss": 5.4,
+      "status": "not verified (outside top N)"
+    },
+    {
+      "position": 32,
+      "id": "pillow:PYSEC-2026-165",
+      "scorerisk_rank": 32,
+      "pre_score": 41.1,
+      "cvss": 5.5,
+      "status": "not verified (outside top N)"
+    },
+    {
+      "position": 33,
+      "id": "pillow:PYSEC-2026-2874",
+      "scorerisk_rank": 33,
+      "pre_score": 41.1,
+      "cvss": 5.5,
+      "status": "not verified (outside top N)"
+    },
+    {
+      "position": 34,
+      "id": "werkzeug:PYSEC-2026-2045",
+      "scorerisk_rank": 34,
+      "pre_score": 41.0,
+      "cvss": 5.3,
+      "status": "not verified (outside top N)"
+    },
+    {
+      "position": 35,
+      "id": "werkzeug:PYSEC-2026-2046",
+      "scorerisk_rank": 35,
+      "pre_score": 40.9,
+      "cvss": 5.3,
+      "status": "not verified (outside top N)"
+    },
+    {
+      "position": 36,
+      "id": "werkzeug:PYSEC-2026-2320",
+      "scorerisk_rank": 36,
+      "pre_score": 40.9,
+      "cvss": 5.3,
+      "status": "not verified (outside top N)"
+    },
+    {
+      "position": 37,
+      "id": "werkzeug:PYSEC-2026-2044",
+      "scorerisk_rank": 37,
+      "pre_score": 40.8,
+      "cvss": 5.3,
+      "status": "not verified (outside top N)"
+    },
+    {
+      "position": 38,
+      "id": "werkzeug:CVE-2026-102598",
+      "scorerisk_rank": 38,
+      "pre_score": 40.2,
+      "cvss": null,
+      "status": "not verified (outside top N)"
+    },
+    {
+      "position": 39,
+      "id": "pillow:PYSEC-2026-2257",
+      "scorerisk_rank": 39,
+      "pre_score": 39.1,
+      "cvss": 4.5,
+      "status": "not verified (outside top N)"
+    },
+    {
+      "position": 40,
+      "id": "flask:PYSEC-2026-2151",
+      "scorerisk_rank": 40,
+      "pre_score": 38.8,
+      "cvss": 4.3,
+      "status": "not verified (outside top N)"
+    },
+    {
+      "position": 41,
+      "id": "werkzeug:PYSEC-2023-57",
+      "scorerisk_rank": 41,
+      "pre_score": 37.3,
+      "cvss": 3.5,
+      "status": "not verified (outside top N)"
+    },
+    {
+      "position": 42,
+      "id": "cryptography:GHSA-537c-gmf6-5ccf",
+      "scorerisk_rank": 42,
+      "pre_score": 25.0,
+      "cvss": null,
+      "status": "not verified (outside top N)"
+    },
+    {
+      "position": 43,
+      "id": "cryptography:GHSA-5cpq-8wj7-hf2v",
+      "scorerisk_rank": 43,
+      "pre_score": 25.0,
+      "cvss": null,
+      "status": "not verified (outside top N)"
+    },
+    {
+      "position": 44,
+      "id": "cryptography:GHSA-h4gh-qq45-vh27",
+      "scorerisk_rank": 44,
+      "pre_score": 25.0,
+      "cvss": null,
+      "status": "not verified (outside top N)"
+    },
+    {
+      "position": 45,
+      "id": "cryptography:GHSA-jm77-qphf-c4w8",
+      "scorerisk_rank": 45,
+      "pre_score": 25.0,
+      "cvss": null,
+      "status": "not verified (outside top N)"
+    },
+    {
+      "position": 46,
+      "id": "cryptography:GHSA-v8gr-m533-ghj9",
+      "scorerisk_rank": 46,
+      "pre_score": 25.0,
+      "cvss": null,
+      "status": "not verified (outside top N)"
+    },
+    {
+      "position": 47,
+      "id": "pyyaml:PYSEC-2021-142",
+      "scorerisk_rank": 47,
+      "pre_score": 22.6,
+      "cvss": 9.8,
+      "status": "not verified (outside top N)"
+    },
+    {
+      "position": 48,
+      "id": "certifi:PYSEC-2023-135",
+      "scorerisk_rank": 48,
+      "pre_score": 19.9,
+      "cvss": 9.8,
+      "status": "not verified (outside top N)"
+    },
+    {
+      "position": 49,
+      "id": "urllib3:PYSEC-2023-192",
+      "scorerisk_rank": 49,
+      "pre_score": 16.9,
+      "cvss": 8.1,
+      "status": "not verified (outside top N)"
+    },
+    {
+      "position": 50,
+      "id": "urllib3:PYSEC-2026-1996",
+      "scorerisk_rank": 50,
+      "pre_score": 16.5,
+      "cvss": 7.5,
+      "status": "not verified (outside top N)"
+    },
+    {
+      "position": 51,
+      "id": "cryptography:PYSEC-2026-1283",
+      "scorerisk_rank": 51,
+      "pre_score": 15.6,
+      "cvss": 7.5,
+      "status": "not verified (outside top N)"
+    },
+    {
+      "position": 52,
+      "id": "certifi:PYSEC-2024-230",
+      "scorerisk_rank": 52,
+      "pre_score": 15.5,
+      "cvss": 7.5,
+      "status": "not verified (outside top N)"
+    },
+    {
+      "position": 53,
+      "id": "cryptography:PYSEC-2023-254",
+      "scorerisk_rank": 53,
+      "pre_score": 15.5,
+      "cvss": 7.5,
+      "status": "not verified (outside top N)"
+    },
+    {
+      "position": 54,
+      "id": "cryptography:PYSEC-2024-225",
+      "scorerisk_rank": 54,
+      "pre_score": 15.4,
+      "cvss": 7.5,
+      "status": "not verified (outside top N)"
+    },
+    {
+      "position": 55,
+      "id": "urllib3:PYSEC-2026-1994",
+      "scorerisk_rank": 55,
+      "pre_score": 15.3,
+      "cvss": 7.5,
+      "status": "not verified (outside top N)"
+    },
+    {
+      "position": 56,
+      "id": "urllib3:PYSEC-2026-1998",
+      "scorerisk_rank": 56,
+      "pre_score": 15.3,
+      "cvss": 7.5,
+      "status": "not verified (outside top N)"
+    },
+    {
+      "position": 57,
+      "id": "cryptography:PYSEC-2023-11",
+      "scorerisk_rank": 57,
+      "pre_score": 13.7,
+      "cvss": 6.5,
+      "status": "not verified (outside top N)"
+    },
+    {
+      "position": 58,
+      "id": "requests:PYSEC-2023-74",
+      "scorerisk_rank": 58,
+      "pre_score": 13.7,
+      "cvss": 6.1,
+      "status": "not verified (outside top N)"
+    },
+    {
+      "position": 59,
+      "id": "urllib3:PYSEC-2026-1995",
+      "scorerisk_rank": 59,
+      "pre_score": 13.6,
+      "cvss": 6.5,
+      "status": "not verified (outside top N)"
+    },
+    {
+      "position": 60,
+      "id": "cryptography:PYSEC-2026-2141",
+      "scorerisk_rank": 60,
+      "pre_score": 13.2,
+      "cvss": 6.5,
+      "status": "not verified (outside top N)"
+    },
+    {
+      "position": 61,
+      "id": "cryptography:PYSEC-2026-1285",
+      "scorerisk_rank": 61,
+      "pre_score": 12.6,
+      "cvss": 5.5,
+      "status": "not verified (outside top N)"
+    },
+    {
+      "position": 62,
+      "id": "urllib3:PYSEC-2026-1999",
+      "scorerisk_rank": 62,
+      "pre_score": 12.4,
+      "cvss": 6.1,
+      "status": "not verified (outside top N)"
+    },
+    {
+      "position": 63,
+      "id": "requests:PYSEC-2026-1873",
+      "scorerisk_rank": 63,
+      "pre_score": 11.4,
+      "cvss": 5.6,
+      "status": "not verified (outside top N)"
+    },
+    {
+      "position": 64,
+      "id": "requests:PYSEC-2026-1872",
+      "scorerisk_rank": 64,
+      "pre_score": 11.1,
+      "cvss": 5.3,
+      "status": "not verified (outside top N)"
+    },
+    {
+      "position": 65,
+      "id": "requests:PYSEC-2026-2275",
+      "scorerisk_rank": 65,
+      "pre_score": 11.1,
+      "cvss": 5.5,
+      "status": "not verified (outside top N)"
+    },
+    {
+      "position": 66,
+      "id": "urllib3:PYSEC-2026-141",
+      "scorerisk_rank": 66,
+      "pre_score": 10.8,
+      "cvss": 5.3,
+      "status": "not verified (outside top N)"
+    },
+    {
+      "position": 67,
+      "id": "cryptography:PYSEC-2026-35",
+      "scorerisk_rank": 67,
+      "pre_score": 10.7,
+      "cvss": 5.3,
+      "status": "not verified (outside top N)"
+    },
+    {
+      "position": 68,
+      "id": "cryptography:PYSEC-2026-3554",
+      "scorerisk_rank": 68,
+      "pre_score": 10.2,
+      "cvss": null,
+      "status": "not verified (outside top N)"
+    },
+    {
+      "position": 69,
+      "id": "cryptography:PYSEC-2026-3553",
+      "scorerisk_rank": 69,
+      "pre_score": 10.1,
+      "cvss": null,
+      "status": "not verified (outside top N)"
+    },
+    {
+      "position": 70,
+      "id": "urllib3:PYSEC-2026-4175",
+      "scorerisk_rank": 70,
+      "pre_score": 10.1,
+      "cvss": null,
+      "status": "not verified (outside top N)"
+    },
+    {
+      "position": 71,
+      "id": "urllib3:PYSEC-2026-4177",
+      "scorerisk_rank": 71,
+      "pre_score": 10.1,
+      "cvss": null,
+      "status": "not verified (outside top N)"
+    },
+    {
+      "position": 72,
+      "id": "urllib3:PYSEC-2023-212",
+      "scorerisk_rank": 72,
+      "pre_score": 8.7,
+      "cvss": 4.2,
+      "status": "not verified (outside top N)"
+    }
+  ],
+  "verdicts": {
+    "pillow:PYSEC-2026-1794": {
+      "verdict": "NOT_VERIFIABLE",
+      "evidence": "no PoC for this class in the MVP"
+    },
+    "bandit:CWE-78": {
+      "verdict": "CONFIRMED",
+      "evidence": "app under test      : app_under_test\nnormal  'example.test' -> 'example.test'\npayload 'x && echo MARK_EXECUTED' -> lines ['x', 'MARK_EXECUTED']\nVULNERABLE: the injected command ran (marker printed on its own line)."
+    },
+    "bandit:CWE-89": {
+      "verdict": "CONFIRMED",
+      "evidence": "app under test      : app_under_test\nnormal  'alice'     -> 1 row(s)\npayload \"' OR '1'='1\" -> 3 row(s)\nVULNERABLE: the payload returned rows it should not."
+    },
+    "manual:CWE-22": {
+      "verdict": "CONFIRMED",
+      "evidence": "app under test      : app_under_test\nnormal  'readme.txt' -> 'Welcome to the demo app.'\npayload '../secret.txt' -> 'FAKE-SECRET-TOKEN-0000'\nVULNERABLE: a file outside the public folder was returned."
+    },
+    "pillow:PYSEC-2023-175": {
+      "verdict": "NOT_VERIFIABLE",
+      "evidence": "no PoC for this class in the MVP"
+    },
+    "pillow:PYSEC-2026-3493": {
+      "verdict": "NOT_VERIFIABLE",
+      "evidence": "no PoC for this class in the MVP"
+    },
+    "jinja2:PYSEC-2026-1471": {
+      "verdict": "NOT_VERIFIABLE",
+      "evidence": "no PoC for this class in the MVP"
+    },
+    "jinja2:PYSEC-2026-1472": {
+      "verdict": "NOT_VERIFIABLE",
+      "evidence": "no PoC for this class in the MVP"
+    }
+  },
+  "patches": {
+    "bandit:CWE-78": {
+      "attempt": 1,
+      "approved": true,
+      "accepted": true,
+      "diff": "--- target_app/app.py\n+++ candidates/CWE-78/app.py\n@@ -57,9 +57,9 @@\n     @app.get(\"/lookup\")\n     def lookup():\n         host = request.args.get(\"host\", \"\")\n-        # VULNERABLE (CWE-78): user input becomes part of a shell command line.\n-        cmd = f'\"{sys.executable}\" -c \"import sys; print(sys.argv[1])\" {host}'\n-        result = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=10)\n+        # FIXED: avoid shell=True, pass arguments as a list.\n+        args = [sys.executable, \"-c\", \"import sys; print(sys.argv[1])\", host]\n+        result = subprocess.run(args, capture_output=True, text=True, timeout=10)\n         return jsonify(output=result.stdout)\n \n     @app.get(\"/files\")\n",
+      "poc_exit": 0,
+      "poc_output": "app under test      : app_under_test\nnormal  'example.test' -> 'example.test'\npayload 'x && echo MARK_EXECUTED' -> lines ['x && echo MARK_EXECUTED']\nSAFE: the payload was treated as plain text.",
+      "tests_exit": 0,
+      "tests_output": "......                                                                   [100%]\n6 passed in 0.21s",
+      "attempts": 1,
+      "attempt_history": [],
+      "human_wait_s": 24.501694917678833,
+      "approval": "human, on the verified patch (the sandbox ran it automatically)",
+      "exported": true,
+      "export_path": "out\\patches\\CWE-78.diff"
+    },
+    "bandit:CWE-89": {
+      "attempt": 1,
+      "approved": true,
+      "accepted": true,
+      "diff": "--- target_app/app.py\n+++ candidates/CWE-89/app.py\n@@ -44,10 +44,10 @@\n     @app.get(\"/users/search\")\n     def search_users():\n         name = request.args.get(\"name\", \"\")\n-        # VULNERABLE (CWE-89): user input is concatenated straight into the SQL string.\n-        query = f\"SELECT id, username, email FROM users WHERE username = '{name}'\"\n+        # FIXED: use parameterized query to avoid SQL injection.\n+        query = \"SELECT id, username, email FROM users WHERE username = ?\"\n         try:\n-            rows = db.execute(query).fetchall()\n+            rows = db.execute(query, (name,)).fetchall()\n         except sqlite3.Error as exc:\n             return jsonify(error=str(exc)), 400\n         return jsonify(\n",
+      "poc_exit": 0,
+      "poc_output": "app under test      : app_under_test\nnormal  'alice'     -> 1 row(s)\npayload \"' OR '1'='1\" -> 0 row(s)\nSAFE: the payload did not leak extra rows.",
+      "tests_exit": 0,
+      "tests_output": "......                                                                   [100%]\n6 passed in 0.20s",
+      "attempts": 1,
+      "attempt_history": [],
+      "human_wait_s": 10.990761041641235,
+      "approval": "human, on the verified patch (the sandbox ran it automatically)",
+      "exported": true,
+      "export_path": "out\\patches\\CWE-89.diff"
+    },
+    "manual:CWE-22": {
+      "attempt": 1,
+      "approved": true,
+      "accepted": true,
+      "diff": "--- target_app/app.py\n+++ candidates/CWE-22/app.py\n@@ -65,11 +65,14 @@\n     @app.get(\"/files\")\n     def read_file():\n         name = request.args.get(\"name\", \"\")\n-        # VULNERABLE (CWE-22): the name is joined to the public folder without\n-        # checking where the resulting path really points.\n-        path = public / name\n+        # FIXED (CWE-22): ensure the requested path stays inside the public directory.\n+        requested_path = (public / name).resolve()\n+        base_path = public.resolve()\n+        # Ensure the resolved path is within the base directory.\n+        if not str(requested_path).startswith(str(base_path)):\n+            return jsonify(error=\"not found\"), 404\n         try:\n-            return jsonify(content=path.read_text(encoding=\"utf-8\"))\n+            return jsonify(content=requested_path.read_text(encoding=\"utf-8\"))\n         except OSError:\n             return jsonify(error=\"not found\"), 404\n \n",
+      "poc_exit": 0,
+      "poc_output": "app under test      : app_under_test\nnormal  'readme.txt' -> 'Welcome to the demo app.'\npayload '../secret.txt' -> ''\nSAFE: the private file was not returned.",
+      "tests_exit": 0,
+      "tests_output": "......                                                                   [100%]\n6 passed in 0.20s",
+      "attempts": 1,
+      "attempt_history": [],
+      "human_wait_s": 9.003655195236206,
+      "approval": "human, on the verified patch (the sandbox ran it automatically)",
+      "exported": false,
+      "export_path": null
+    }
+  },
+  "enrichment": {
+    "pillow:PYSEC-2026-1794": {
+      "query": "CVE-2023-4863 exploited in the wild public exploit proof of concept vendor patch advisory",
+      "sources": [
+        {
+          "title": "CVE-2023-4863 and CVE-2023-5217 Exploited in the Wild | Wiz Blog",
+          "url": "https://www.wiz.io/blog/cve-2023-4863-and-cve-2023-5217-exploited-in-the-wild",
+          "snippet": "|\n\nCVE-2023-4863 is a critical vulnerability in libwebp, and CVE-2023-5217 is a high severity vulnerability in libvpx, both reportedly exploited in the wild. Both are mainly client side vulnerabilities and thus unlikely to be exploitable on most affected cloud workloads other than virtual desktops and servers that handle images or video. Customers should therefore prioritize patching these cases as well as vulnerable instances detected in build environments.\n\n# What is CVE-2023-4863? [...] ## Background\n\nOn September 11th, 2023, a vulnerability was assigned CVE-2023-4863 that reportedly only affected Chrome. More specifically, it was described as a heap buffer overflow in WebP in Chrome, allowing a remote attacker to perform an out of bounds memory write via a crafted HTML page. [...] While both vulnerabilities have been reportedly exploited in the wild, no concrete details about the corresponding malicious activity have been published as of October 1, 2023. If the reported overlap between CVE-2023-4863 and CVE-2023-41064 turns out to be correct, then BLASTPASS would currently be the only publicly known campaign exploiting the relevant flaw in libwebp.\n\n# Which products are affected?\n\n## CVE-2023-4863"
+        },
+        {
+          "title": "CVE-2023-4863 Vulnerability: Analysis, Detection, Removal | Huntress",
+          "url": "https://www.huntress.com/threat-library/vulnerabilities/cve-2023-4863",
+          "snippet": "Proof-of-concept (PoC) exploits for CVE-2023-4863 have been widely circulated among security researchers. Active exploitation has already been observed in the wild, with attackers targeting end-user devices and enterprise networks. Exploit frameworks like Metasploit and other public repositories have showcased working examples.\n\n## How to detect CVE-2023-4863 vulnerability [...] CVE-2023-4863 is a critical remote code execution (RCE) vulnerability that affects certain implementations of WebP, an image format commonly used in web browsers. It exploits a heap buffer overflow condition due to improper input validation when handling crafted WebP images. This can enable attackers to execute arbitrary code on the target system, compromise its integrity, and potentially take complete control of affected devices. It has a CVSS score of 9.8, marking it as highly severe. [...] CVE-2023-4863 is a heap buffer overflow vulnerability in the WebP image format library. Attackers can craft malicious WebP files to exploit this flaw, resulting in unauthorized code execution.\n\nTypically, systems are compromised when users open malicious WebP images through vulnerable applications like browsers or email clients. Viewing these images triggers the exploit and executes the attacker\u2019s payload."
+        },
+        {
+          "title": "CVE-2023-4863 | Arctic Wolf",
+          "url": "https://arcticwolf.com/resources/blog/cve-2023-4863",
+          "snippet": "We have not identified a public proof of concept (PoC) exploit that allows for code execution; however, we have identified a PoC exploit for a DoS condition. Threat actors could leverage the DoS PoC exploit as a starting point to develop a PoC exploit that leads to arbitrary code execution. \n\n## Recommendations for CVE-2023-4863\n\nClosely Monitor Software Vendor Patch Advisories Related to CVE-2023-4863 [...] The vulnerability has been patched in the latest version of libwebp; however, the security patch is not automatically applied to software products that use the library under the hood of their code, such as electron-based applications and Chromium-based browsers. Remediating CVE-2023-4863 in third-party software products is only possible by applying the official security updates from vendors as they patch their products. [...] On September 7, 2023, Apple released emergency security updates to fix a buffer overflow vulnerability (CVE-2023-41064) impacting macOS, iOS, iPadOS, and watchOS products that was used in a zero-click exploitation chain by the NSO Group. Shortly after, on September 11, 2023, Google released an update to fix a buffer overflow vulnerability (CVE-2023-4863) in Google Chrome, which was reported by Apple\u2019s Security Engineering and Architecture (SEAR) and Citizen Lab. Both vulnerabilities were nearly"
+        },
+        {
+          "title": "NVD-CVE-2023-4863",
+          "url": "https://nvd.nist.gov/vuln/detail/cve-2023-4863",
+          "snippet": "### This CVE is in CISA's Known Exploited Vulnerabilities Catalog\n\nReference CISA's BOD 22-01 and Known Exploited Vulnerabilities Catalog for further guidance and requirements.\n\n| Vulnerability Name | Date Added | Due Date | Required Action |\n ---  --- |\n| Google Chromium WebP Heap-Based Buffer Overflow Vulnerability | September 13, 2023 | October 04, 2023 | Apply mitigations per vendor instructions or discontinue use of the product if mitigations are unavailable. |\n\n### Weakness Enumeration"
+        },
+        {
+          "title": "CVE-2023-4863 | Threat Intel",
+          "url": "https://www.lookout.com/threat-intelligence/article/cve-2023-4863",
+          "snippet": "Google released a patch for a new zero-day vulnerability in Chrome tracked as CVE-2023-4863 on September 12th. CISA also listed the CVE in their database after Google disclosed that there is active exploitation of CVE-2023-4863. CISA\u2019s action mandates government organizations to apply the fix by October 4th, 2023. A desktop fix was released for the same earlier in the month. This is a case of heap buffer overflow in the WebP image format of Google Chrome. It allows a remote attacker to perform"
+        }
+      ],
+      "assessment": {
+        "exploited_in_the_wild": "yes",
+        "public_exploit_code": "yes",
+        "vendor_fix_available": "yes",
+        "summary": "CVE-2023-4863 is a critical heap buffer overflow in WebP/libwebp, actively exploited in the wild [1]; public PoC exploits are circulating [2]; Google has issued a patch for libwebp [5]."
+      },
+      "tavily_credits": 1
+    },
+    "pillow:PYSEC-2026-3493": {
+      "query": "CVE-2026-54058 exploited in the wild public exploit proof of concept vendor patch advisory",
+      "sources": [
+        {
+          "title": "June 2026 Threat Report: Actively Exploited CVEs",
+          "url": "https://www.greenbone.net/en/blog/threat-report-june-2026",
+          "snippet": "exploitation has been observed in the wild. Public PoC exploits or a full public exploit chain are not available. Mitigate by applying SAP\u2019s June 2026 Security Patch Day updates immediately. [...] ## Summary\n\nJune 2026 underscored accelerating enterprise risk from actively exploited flaws in Splunk, SolarWinds Serv-U, Check Point gateways, Ubiquiti UniFi OS, Ivanti Sentry, Squid, HTTP/2 implementations, and SAP platforms. Public PoCs, KEV listings, ransomware links, and exposed internet-facing assets reinforce the need for rapid patching, compensating controls, and continuous vulnerability detection across perimeter and core infrastructure. [...] CVSS 7.5 \u00b7 HighActively exploitedIn CISA KEVPublic PoC"
+        },
+        {
+          "title": "May 2026 CVE Landscape",
+          "url": "https://www.recordedfuture.com/blog/may-2026-cve-landscape",
+          "snippet": "12 of the 41 vulnerabilities enabled remote code execution (RCE), affecting products from 8 vendors: Microsoft, Adobe, Langflow, Palo Alto Networks, Apache, openDCIM, Fortinet, and Ivanti.\n Insikt Group identified public proof-of-concept (PoC) exploits for 32 of the 41 vulnerabilities reported this month.\n The most commonly observed flaws this month were CWE-79 (Cross-site Scripting), CWE-506 (Embedded Malicious Code), and CWE-89 (SQL Injection), with three CVEs each. [...] All 22 vulnerabilities below were actively exploited in May 2026. This table does not include the 19 CVEs associated with honeypot activity, which are available to Recorded Future customers via the CVE Monthly Report. The table below also provides examples of public PoCs identified by Insikt Group\u00ae. These PoCs were not tested for accuracy or efficacy. Vulnerability management teams should exercise caution and verify the validity of PoCs before testing.\n\nRisk  \nScore\n\nMalware Analysis [...] ## Exploitation Analysis\n\nThis section highlights some of the highest-impact, actively exploited vulnerabilities this month, specifically those linked to known threat actor campaigns or that have public PoC exploits available. Vulnerabilities with no meaningful public technical detail are summarized in the quick reference table above only."
+        },
+        {
+          "title": "GitHub - 0xMarcio/pocindex: Search public CVE proof-of-concept exploits from GitHub, Nuclei, ExploitDB, Metasploit and Vulhub, with CVSS, EPSS and CISA KEV context. \u00b7 GitHub",
+          "url": "https://github.com/0xMarcio/pocindex",
+          "snippet": "```\n# everything the index knows about one CVE # |'.[] | select(.cve == \"CVE-2021-44228\") | {cve, poc: (.poc | length), nuclei, msf, edb, vulhub, collections}' ' ' # every published CVSS assessment plus vetted advisory links # |'.\"CVE-2021-44228\"' ' ' # likelihood of exploitation in the next 30 days # |'.\"CVE-2021-44228\"' ' '# stars and last push for one PoC repository; repository keys are lowercased # |'.\"sfewer-r7/cve-2026-55040\"' ' '\n``` [...] | Stars | Released | PoC | Description |\n ---  --- |\n| 1\u2b50 | 2h ago | CVE-2026-80428 | ILIAS \u2264 9.21 / 10.9 / 11.2 - Unauthenticated PHP Object Injection (RCE) |\n| 0\u2b50 | 9h ago | CVE-2026-55450 | Langflow is a tool for building and deploying AI-powered agents and workflows. Prior to 1.9.1,\u2026 |\n| 0\u2b50 | 11h ago | CVE-2026-91940-crawl4ai-Arbitrary-File-Write | CVE-2026-91940: arbitrary file write in crawl4ai <=0.9.2 via the untrusted-config gate\u2026 |"
+        },
+        {
+          "title": "Common Vulnerabilities and Exposures (CVEs)<!-- --> | Tenable\u00ae",
+          "url": "https://www.tenable.com/cve",
+          "snippet": "Two zero-day vulnerabilities in Citrix NetScaler ADC and Gateway were exploited in the wild. Patches are available. Organizations are strongly advised to patch immediately.\n ##### CVE-2026-88771\n\n  ###### criticalVulnerability of Interest\n\n  Two zero-day vulnerabilities in Citrix NetScaler ADC and Gateway were exploited in the wild. Patches are available. Organizations are strongly advised to patch immediately.\n ##### CVE-2026-93836\n\n  ###### highVulnerability of Interest [...] Fortinet reports that a zero-day directory traversal flaw in FortiMail has been actively exploited in the wild. Apply the shared workarounds until patches become available.\n ##### CVE-2026-76504\n\n  ###### criticalVulnerability of Interest\n\n  Cisco's Product Security Incident Response Team confirmed active exploitation of this zero-day flaw in SD-WAN Manager. Apply the available patches as soon as possible.\n ##### CVE-2026-88772\n\n  ###### criticalVulnerability of Interest"
+        },
+        {
+          "title": "Known Exploited Vulnerabilities Catalog | CISA",
+          "url": "https://www.cisa.gov/known-exploited-vulnerabilities-catalog",
+          "snippet": "Date Added: 2026-09-25\n   Due Date: 2026-09-28 [...] Date Added: 2026-09-27\n   Due Date: 2026-09-30 [...] Date Added: 2026-09-27\n   Due Date: 2026-09-30"
+        }
+      ],
+      "assessment": {
+        "exploited_in_the_wild": "unclear",
+        "public_exploit_code": "unclear",
+        "vendor_fix_available": "unclear",
+        "summary": "The sources [1] through [5] do not mention CVE-2026-54058 affecting Pillow 9.5.0, so it is unclear whether it is exploited in the wild, has public exploit code, or a vendor fix."
+      },
+      "tavily_credits": 1
+    },
+    "jinja2:PYSEC-2026-1471": {
+      "query": "CVE-2025-27516 exploited in the wild public exploit proof of concept vendor patch advisory",
+      "sources": [
+        {
+          "title": "CVE-2025-27516 - Exploits & Severity - Feedly",
+          "url": "https://feedly.com/cve/CVE-2025-27516",
+          "snippet": "### Impact\n\nAn attacker who controls template content in an application using Jinja can execute arbitrary Python code by using the |attr filter to bypass the sandbox's str.format restrictions.\n\n### Exploitation\n\nThere is no evidence that a public proof-of-concept exists. There is no evidence of proof of exploitation at the moment.\n\n### Patch\n\nPatches are available. Fix included in Jinja version 3.1.6 and later ( Security advisory available at \n\n### Mitigation [...] Vendor advisory\n\nRedHat CVE advisoryreleased asecurity advisory (CVE-2025-27516).\n\nMar 5, 2025 at 11:45 PM\n\nEPSS\n\nFIRST assigned an EPSS Score of 0.04% (Percentile: 11.8%)\n\nMar 6, 2025 at 10:04 AM\n\nDetection in vulnerability scanners\n\nDetection for the vulnerability has been added to Nessus(232187)\n\nMar 7, 2025 at 2:15 AM\n\nDetection in vulnerability scanners\n\nDetection for the vulnerability has been added to Qualys(691792258374)\n\nMar 7, 2025 at 7:53 AM\n\nStatic CVE timeline graph [...] ### Affected systems\n\nDebian/debian\\_linux\n\n+MMM more\n\n### Patches\n\nOracle\n\n+MMM more\n\n#### Vendor advisory\n\n[[GHSA-cpwx-vrp4-4pq7] Jinja2 vulnerable to sandbox breakout through attr filter selecting format method\n\nGitHub Advisory Database / 19mo"
+        },
+        {
+          "title": "CVE-2025-27516: Palletsprojects Jinja RCE Vulnerability",
+          "url": "https://www.sentinelone.com/vulnerability-database/cve-2025-27516",
+          "snippet": "Updated:\n\n## CVE-2025-27516 Overview\n\nCVE-2025-27516 is a sandbox escape vulnerability in Jinja, an extensible templating engine widely used in Python web applications. Prior to version 3.1.6, an oversight in how the Jinja sandboxed environment interacts with the |attr filter allows an attacker that controls the content of a template to execute arbitrary Python code. [...] Upgrade Jinja to version 3.1.6 or later immediately\n Audit all template sources to ensure untrusted content cannot be injected\n Review application architecture to minimize exposure of template processing to user input\n Implement additional input validation for any user-controllable template content\n\n### Patch Information [...] The vulnerability stems from a bypass mechanism where attackers can use the |attr filter to obtain a reference to a string's plain format method, circumventing the sandbox protections that normally catch calls to str.format. This vulnerability impacts users of applications that execute untrusted templates."
+        },
+        {
+          "title": "CVE-2025-27516",
+          "url": "https://explore.alas.aws.amazon.com/CVE-2025-27516.html",
+          "snippet": "# CVE-2025-27516\n\nPublic on 2025-03-05\n\nModified on 2026-04-20\n\nDescription [...] Jinja is an extensible templating engine. Prior to 3.1.6, an oversight in how the Jinja sandboxed environment interacts with the |attr filter allows an attacker that controls the content of a template to execute arbitrary Python code. To exploit the vulnerability, an attacker needs to control the content of a template. Whether that is the case depends on the type of application using Jinja. This vulnerability impacts users of applications which execute untrusted templates. Jinja's sandbox does [...] | Platform | Package | Release Date | Advisory | Status |\n ---  --- \n| Amazon Linux 2023 | ansible-core | 2025-03-26 | ALAS2023-2025-893 | Fixed |\n| Amazon Linux 1 | python-jinja2 | No Fix Planned |\n| Amazon Linux 2 - Core | python-jinja2 | 2025-03-06 | ALAS2-2025-2792 | Fixed |\n| Amazon Linux 2023 | python-jinja2 | 2025-03-26 | ALAS2023-2025-894 | Fixed |\n| Amazon Linux 2 - Core | python3-jinja2 | 2025-03-06 | ALAS2-2025-2793 | Fixed |\n\n# CVSS Scores"
+        },
+        {
+          "title": "CVE-2025-27516 - Red Hat Customer Portal",
+          "url": "https://access.redhat.com/security/cve/cve-2025-27516",
+          "snippet": "## Statement\n\nThis vulnerability is rated as important severity due to the potential for an attacker to bypass Jinja's sandbox by exploiting the |attr filter, by controlling template content, an attacker can execute arbitrary Python code, impacting the integrity, confidentiality, and availability of the system. While the attack requires user interaction to trigger untrusted templates, the risk is significant in applications that allow such templates to be executed.\n\n### Additional information [...] A flaw was found in Jinja. In affected versions, an oversight in how the Jinja sandboxed environment interacts with the `|attr` filter allows an attacker who controls the content of a template to execute arbitrary Python code. To exploit the vulnerability, an attacker needs to control the content of a template. Whether that is the case depends on the type of application using Jinja. This vulnerability impacts users of applications that execute untrusted templates. Jinja's sandbox does catch [...] |  | Red Hat | NVD | cve.org |\n ---  --- |\n| Base Score | 7.3 | 8.8 | N/A |\n| Attack Vector | Local | Local | N/A |\n| Attack Complexity | Low | Low | N/A |\n| Privileges Required | Low | Low | N/A |\n| User Interaction | Required | None | N/A |\n| Scope | Unchanged | Changed | N/A |\n| Confidentiality | High | High | N/A |\n| Integrity Impact | High | High | N/A |\n| Availability Impact | High | High | N/A |\n\n### Vector\n\nRed Hat: CVSS:3.1/AV:L/AC:L/PR:L/UI:R/S:U/C:H/I:H/A:H"
+        },
+        {
+          "title": "CVE-2025-27516 Common Vulnerabilities and Exposures | SUSE",
+          "url": "https://www.suse.com/security/cve/CVE-2025-27516.html",
+          "snippet": ">= 4.10.0-76.el9_5.6`  `fence-agents-wti >= 4.10.0-76.el9_5.6`  `fence-virt >= 4.10.0-76.el9_5.6`  `fence-virtd >= 4.10.0-76.el9_5.6`  `fence-virtd-cpg >= 4.10.0-76.el9_5.6`  `fence-virtd-libvirt >= 4.10.0-76.el9_5.6`  `fence-virtd-multicast >= 4.10.0-76.el9_5.6`  `fence-virtd-serial >= 4.10.0-76.el9_5.6`  `fence-virtd-tcp >= 4.10.0-76.el9_5.6`  `ha-cloud-support >= 4.10.0-76.el9_5.6`  `python3-jinja2 >= 2.11.3-8.el9_5` | Patchnames:  RHSA-2025:3113 (x86\\_64) RHSA-2025:3406 | [...] | Image SLE-Micro  Image SLE-Micro-Azure  Image SLE-Micro-BYOS  Image SLE-Micro-BYOS-Azure  Image SLE-Micro-BYOS-EC2  Image SLE-Micro-EC2 |  `python311-Jinja2 >= 3.1.2-8.1` |\n| SUSE Enterprise Storage 7.1 |  `python3-Jinja2 >= 2.10.1-150000.3.21.1` | Patchnames:  SUSE-Storage-7.1-2025-1004 |\n| SUSE Liberty Linux 10 |  `python3-jinja2 >= 3.1.6-1.el10_0`  `python3-jinja2+i18n >= 3.1.6-1.el10_0` | Patchnames:  RHSA-2025:7476 | [...] | SUSE Linux Enterprise High Performance Computing 15 SP4-LTSS |  `python3-Jinja2 >= 2.10.1-150000.3.21.1` | Patchnames:  SUSE-SLE-Product-HPC-15-SP4-LTSS-2025-1004 |"
+        }
+      ],
+      "assessment": {
+        "exploited_in_the_wild": "no",
+        "public_exploit_code": "no",
+        "vendor_fix_available": "yes",
+        "summary": "CVE-2025-27516 is a Jinja sandbox escape via the |attr filter that lets an attacker who controls template content run arbitrary Python code ([1]). No public proof\u2011of\u2011concept or observed exploitation is known ([1]), and the issue is patched in Jinja\u202f3.1.6 and later ([1])."
+      },
+      "tavily_credits": 1
+    },
+    "jinja2:PYSEC-2026-1472": {
+      "query": "CVE-2024-56201 exploited in the wild public exploit proof of concept vendor patch advisory",
+      "sources": [
+        {
+          "title": "CVE-2024-56201 - Exploits & Severity - Feedly",
+          "url": "https://feedly.com/cve/CVE-2024-56201",
+          "snippet": "GitHub Security Advisory: GHSA-gmj6-6f8f-6699 Release Date: 2024-12-21 Update Date: 2024-12-26 Severity: Moderate CVE-2024-56201 Package Information Package: jinja2 Affected Versions: Patched Versions: 3.1.5 Description A bug in the Jinja compiler allows an attacker that controls both the content and filename of a template to execute arbitrary Python code, regardless of if Jinja's sandbox is used. To exploit the vulnerability, an attacker needs to control both the filename and the contents of a [...] ### Exploitation\n\nThere is no evidence that a public proof-of-concept exists. There is no evidence of proof of exploitation at the moment.\n\n### Patch\n\nFixed in Jinja version 3.1.5. Users should immediately upgrade to this version or later to mitigate the vulnerability.\n\n### Mitigation [...] Dec 24, 2024 at 10:16 AM\n\nStatic CVE timeline graph\n\n### Affected systems\n\nPalletsprojects/jinja\n\n+MMM more\n\n### Patches\n\nOracle\n\n+MMM more\n\n### Links to Mitre Att&cks\n\nT1070: Indicator Removal on Host\n\n+MMM more\n\n### Attack patterns\n\nCAPEC-134: Email Injection\n\n+MMM more\n\n#### Vendor advisory\n\n[[GHSA-gmj6-6f8f-6699] Jinja has a sandbox breakout through malicious filenames\n\nGitHub Advisory Database / 21mo"
+        },
+        {
+          "title": "CVE-2024-56201: Palletsprojects Jinja RCE Vulnerability",
+          "url": "https://www.sentinelone.com/vulnerability-database/cve-2024-56201",
+          "snippet": "CVE-2024-56201 is a remote code execution vulnerability in Palletsprojects Jinja 3.x that allows attackers controlling template content and filename to execute arbitrary Python code, bypassing sandbox protections. This article covers technical details, affected versions, exploitation risks, and available patches.\n\nUpdated:\n\n## CVE-2024-56201 Overview [...] The patch fixing this vulnerability is available in version 3.1.5. Users should upgrade to this or a later version to remediate the issue.\n\n### Workarounds\n\nImplement input validation and ensure only trusted users can generate templates.\n\n```\n# Configuration example pip install --upgrade jinja2==3.1.5 \n```\n\nDisclaimer: This content was generated using AI. While we strive for accuracy, please verify critical information with official sources. [...] Enable verbose logging for template rendering activities.\n Set up alerts for changes in template filenames or content in deployment environments using Jinja.\n\n## How to Mitigate CVE-2024-56201\n\n### Immediate Actions Required\n\n Update Jinja to version 3.1.5 or later.\n Review and sanitize user-supplied data used as template content.\n Restrict access to the template directory to trusted users only.\n\n### Patch Information"
+        },
+        {
+          "title": "CERT-EU - Publications - Security Advisories",
+          "url": "https://cert.europa.eu/publications/security-advisories/2024",
+          "snippet": "This vulnerability is being exploited in the wild, and proof-of-concepts have been publicly disclosed by third parties. The vendor is gradually releasing patches for the vulnerable versions since April 14, 2024. However, the patches are not available for all the affected versions yet. In this case, it is highly recommended to apply the mitigation measures, as well as implementing the verification steps suggested by the vendor.\n ### 2024-036: Vulnerabilities in Fortinet products"
+        },
+        {
+          "title": "Blog | Company | VulnCheck",
+          "url": "https://www.vulncheck.com/blog",
+          "snippet": "In May, VulnCheck identified evidence of 103 CVEs that were publicly disclosed for the first time as exploited in the wild, marking a 90.7% increase over April.\n\nkev\n\nVulnCheck Initial Access Intelligence Update - May 2024\n\nIn May 2024, we developed new Initial Access Intelligence (IAI) artifacts for 20 CVEs, covering 16 different vendors and 18 different products.\n\ninitial-access\n\nThe Real Danger Lurking in the NVD Backlog [...] New Year, New UI\n\nVulnCheck's new update enhances our CVE pages bringing actionable threat intelligence to the forefront.\n\ncvevuln-intelproduct\n\nVulnCheck Initial Access Intelligence - 2024 Year in Review\n\nIn 2024, VulnCheck's Initial Access Intelligence (IAI) team delivered custom exploits and detection artifacts for 169 CVEs. Among these, 99 CVEs (58.6%) were actively exploited in the wild.\n\n1initial-accesskevcvevuln-intel\n\nFour-Faith Industrial Router CVE-2024-12856 Exploited in the Wild [...] VulnCheck delivers intelligence to the command line with VulnCheck\u2019s new open source tool, VulnCheck CLI.\n\ncommunityip-intel\n\nVulnCheck Exploited Vulnerabilities Report - September 2024\n\nIn September, VulnCheck identified evidence of 78 CVEs that were publicly disclosed for the first time as exploited in the wild.\n\n1kev\n\nVulnCheck Initial Access Intelligence Update - September 2024"
+        },
+        {
+          "title": "CVE-2024-56201",
+          "url": "https://explore.alas.aws.amazon.com/CVE-2024-56201.html",
+          "snippet": "Jinja is an extensible templating engine. Prior to 3.1.5, a bug in the Jinja compiler allows an attacker that controls both the content and filename of a template to execute arbitrary Python code, regardless of if Jinja's sandbox is used. To exploit the vulnerability, an attacker needs to control both the filename and the contents of a template. Whether that is the case depends on the type of application using Jinja. This vulnerability impacts users of applications which execute untrusted [...] # CVE-2024-56201\n\nPublic on 2024-12-23\n\nModified on 2025-01-03\n\nDescription [...] # CVSS Scores\n\n| Score Type | Score | Vector |\n --- \n| Amazon Linux | CVSSv3 | 7.0 | CVSS:3.1/AV:L/AC:H/PR:L/UI:N/S:U/C:H/I:H/A:H |\n| NVD | CVSSv3 | 8.8 | CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:C/C:H/I:H/A:H |\n\n# References\n\nFAQs regarding Amazon Linux ALAS/CVE Severity Red Hat: CVE-2024-56201 Mitre: CVE-2024-56201"
+        }
+      ],
+      "assessment": {
+        "exploited_in_the_wild": "unclear",
+        "public_exploit_code": "no",
+        "vendor_fix_available": "yes",
+        "summary": "Jinja2 3.1.2 is affected by CVE-2024-56201, allowing RCE when attacker controls template filename and content; a patch exists in version 3.1.5 [2][5]; no public proof\u2011of\u2011concept is known [1]; whether it is exploited in the wild is unclear."
+      },
+      "tavily_credits": 1
+    }
+  },
+  "usage": {
+    "nemotron_calls": 7,
+    "tokens": 14125,
+    "est_cost_usd": 0.008307
+  },
+  "duration_s": 40.4,
+  "human_review_s": 44.5
+}

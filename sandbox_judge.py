@@ -36,6 +36,22 @@ def _environment():
     return _env
 
 
+def describe_environment():
+    """What the sandbox actually has installed (flask and pytest are installed unpinned),
+    so a verdict can be tied to the versions that produced it."""
+    env = _environment()
+    res = env.run(
+        shell=(
+            "python -c \"import sys, importlib.metadata as m; "
+            "print('python', sys.version.split()[0]); "
+            "[print(p, m.version(p)) for p in ('flask', 'werkzeug', 'pytest')]\""
+        ),
+        timeout=60,
+    ).wait()
+    details = dict(line.split(" ", 1) for line in (res.stdout or "").strip().splitlines() if " " in line)
+    return {"image": BASE_IMAGE, "install": "pip install flask pytest (unpinned)", **details}
+
+
 def warm_up():
     """Create the dependency checkpoint once, before any parallel judging."""
     _environment()

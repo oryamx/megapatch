@@ -1,0 +1,264 @@
+{
+  "kind": "rejudge",
+  "created_at": "2026-10-10T17:49:51+00:00",
+  "note": "Separate artifact. The recorded runs were not modified and these verdicts are not part of them. Nothing was exported and no model was called.",
+  "judge_fingerprint": "b2dbcb16a570b350",
+  "judge_fingerprint_files": [
+    "harness.py",
+    "test_target_app.py",
+    "target_app/app.py",
+    "judge.py",
+    "sandbox_judge.py",
+    "catalog.py",
+    "poc_cmdi.py",
+    "poc_path.py",
+    "poc_sqli.py"
+  ],
+  "judge_fingerprint_not_covered": "packages installed in the sandbox at run time (see sandbox_environment), the contree-sdk version, and Nebius platform behavior",
+  "sandbox_environment": {
+    "image": "python:3.12-slim",
+    "install": "pip install flask pytest (unpinned)",
+    "python": "3.12.13",
+    "flask": "3.1.3",
+    "werkzeug": "3.1.9",
+    "pytest": "9.1.1"
+  },
+  "base_ref_for_recorded_diffs": "5c74bd2",
+  "base_target_app_sha256": "5b15268676039c76c175e169baabdf7081164e72dde1e2c0af0ed9ee920f42f3",
+  "current_target_app_sha256": "876572d2fc8842e5fb70a5fbbdd78feee09f0ffde040ae7f176d58681daedbd1",
+  "results": [
+    {
+      "run_file": "evidence/golden_run.json",
+      "run_sha256": "a0d9a7f82c3157d1405bd8f70cd45facb151a13b915d4e15b6af3cbfd871f21d",
+      "finding_id": "bandit:CWE-78",
+      "cwe": "CWE-78",
+      "original": {
+        "judge_fingerprint": null,
+        "accepted": true,
+        "attempts": 1,
+        "approval": "auto (--yes)",
+        "exported": true
+      },
+      "diff_sha256": "7d5996bed470506987e3b820eab9ca94af897e9c667e7af356a2a983c84829fc",
+      "diff_roundtrip_ok": true,
+      "candidate_sha256": "567b2a06bc6760c03abd0283b14f03e9eb6182efd7b7686b1bfdc6e598c8bd32",
+      "rejudged": {
+        "accepted": true,
+        "poc": "poc_cmdi.py",
+        "poc_exit": 0,
+        "tests_exit": 0,
+        "poc_output": "app under test      : app_under_test\nnormal  'example.test' -> 'example.test'\npayload 'x && echo MARK_EXECUTED' -> lines ['x && echo MARK_EXECUTED']\nSAFE: the payload was treated as plain text.",
+        "tests_output_tail": "......                                                                   [100%]\n6 passed in 0.22s"
+      },
+      "verdict_changed": false
+    },
+    {
+      "run_file": "evidence/golden_run.json",
+      "run_sha256": "a0d9a7f82c3157d1405bd8f70cd45facb151a13b915d4e15b6af3cbfd871f21d",
+      "finding_id": "bandit:CWE-89",
+      "cwe": "CWE-89",
+      "original": {
+        "judge_fingerprint": null,
+        "accepted": true,
+        "attempts": 1,
+        "approval": "auto (--yes)",
+        "exported": true
+      },
+      "diff_sha256": "4eb23df3dff0ad496646e31dfa994868a3ce27fbb6cbfcf7384cce5392f7d79e",
+      "diff_roundtrip_ok": true,
+      "candidate_sha256": "dba2fc8a08a12ed5adf2a19ecb58ca5708dcc50d4b0c9d666de21f09449578a0",
+      "rejudged": {
+        "accepted": true,
+        "poc": "poc_sqli.py",
+        "poc_exit": 0,
+        "tests_exit": 0,
+        "poc_output": "app under test      : app_under_test\nnormal  'alice'     -> 1 row(s)\npayload \"' OR '1'='1\" -> 0 row(s)\nSAFE: the payload did not leak extra rows.",
+        "tests_output_tail": "......                                                                   [100%]\n6 passed in 0.19s"
+      },
+      "verdict_changed": false
+    },
+    {
+      "run_file": "evidence/golden_run.json",
+      "run_sha256": "a0d9a7f82c3157d1405bd8f70cd45facb151a13b915d4e15b6af3cbfd871f21d",
+      "finding_id": "manual:CWE-22",
+      "cwe": "CWE-22",
+      "original": {
+        "judge_fingerprint": null,
+        "accepted": true,
+        "attempts": 1,
+        "approval": "auto (--yes)",
+        "exported": true
+      },
+      "diff_sha256": "d04f83c50052caadf486b6621e37456c23c5eb4f90ff0adebb49d729b8cfb3e8",
+      "diff_roundtrip_ok": true,
+      "candidate_sha256": "40c13f9369a49e5e8f3bf03e2f23f53d43339198bf41ffe33bd73f2de2063d8e",
+      "rejudged": {
+        "accepted": true,
+        "poc": "poc_path.py",
+        "poc_exit": 0,
+        "tests_exit": 0,
+        "poc_output": "app under test      : app_under_test\nnormal  'readme.txt' -> 'Welcome to the demo app.'\npayload '../secret.txt' (parent directory) -> ''\npayload '../public_backup/backup.txt' (sibling with the same prefix) -> ''\nSAFE: neither escape returned a private file.",
+        "tests_output_tail": "......                                                                   [100%]\n6 passed in 0.22s"
+      },
+      "verdict_changed": false
+    },
+    {
+      "run_file": "evidence/run_with_repair.json",
+      "run_sha256": "9f7e7a14fc638be4b9adb408f89fa5bba1190e7d771c4e5b9cad50c22aef0408",
+      "finding_id": "bandit:CWE-78",
+      "cwe": "CWE-78",
+      "original": {
+        "judge_fingerprint": null,
+        "accepted": true,
+        "attempts": 1,
+        "approval": "auto (--yes)",
+        "exported": true
+      },
+      "diff_sha256": "2619f793d17e567280f24ca2f95787a9b657c2bb1fa0f881d06104d3e3081b75",
+      "diff_roundtrip_ok": true,
+      "candidate_sha256": "293402993ea332e84b8e991d2c0aa3cf02dfad4a9c351ad4030ac434abe9939b",
+      "rejudged": {
+        "accepted": true,
+        "poc": "poc_cmdi.py",
+        "poc_exit": 0,
+        "tests_exit": 0,
+        "poc_output": "app under test      : app_under_test\nnormal  'example.test' -> 'example.test'\npayload 'x && echo MARK_EXECUTED' -> lines ['x && echo MARK_EXECUTED']\nSAFE: the payload was treated as plain text.",
+        "tests_output_tail": "......                                                                   [100%]\n6 passed in 0.20s"
+      },
+      "verdict_changed": false
+    },
+    {
+      "run_file": "evidence/run_with_repair.json",
+      "run_sha256": "9f7e7a14fc638be4b9adb408f89fa5bba1190e7d771c4e5b9cad50c22aef0408",
+      "finding_id": "bandit:CWE-89",
+      "cwe": "CWE-89",
+      "original": {
+        "judge_fingerprint": null,
+        "accepted": true,
+        "attempts": 1,
+        "approval": "auto (--yes)",
+        "exported": true
+      },
+      "diff_sha256": "4eb23df3dff0ad496646e31dfa994868a3ce27fbb6cbfcf7384cce5392f7d79e",
+      "diff_roundtrip_ok": true,
+      "candidate_sha256": "dba2fc8a08a12ed5adf2a19ecb58ca5708dcc50d4b0c9d666de21f09449578a0",
+      "rejudged": {
+        "accepted": true,
+        "poc": "poc_sqli.py",
+        "poc_exit": 0,
+        "tests_exit": 0,
+        "poc_output": "app under test      : app_under_test\nnormal  'alice'     -> 1 row(s)\npayload \"' OR '1'='1\" -> 0 row(s)\nSAFE: the payload did not leak extra rows.",
+        "tests_output_tail": "......                                                                   [100%]\n6 passed in 0.21s"
+      },
+      "verdict_changed": false
+    },
+    {
+      "run_file": "evidence/run_with_repair.json",
+      "run_sha256": "9f7e7a14fc638be4b9adb408f89fa5bba1190e7d771c4e5b9cad50c22aef0408",
+      "finding_id": "manual:CWE-22",
+      "cwe": "CWE-22",
+      "original": {
+        "judge_fingerprint": null,
+        "accepted": true,
+        "attempts": 2,
+        "approval": "auto (--yes)",
+        "exported": true
+      },
+      "diff_sha256": "db782f192c1063297b0ed68bd6fcb222101fd589fee7392797f890992692f0b5",
+      "diff_roundtrip_ok": true,
+      "candidate_sha256": "f78ff0027dfc51ce0b5f5aaebaccf8a4cfd600fb804848042d14b02eac543696",
+      "rejudged": {
+        "accepted": true,
+        "poc": "poc_path.py",
+        "poc_exit": 0,
+        "tests_exit": 0,
+        "poc_output": "app under test      : app_under_test\nnormal  'readme.txt' -> 'Welcome to the demo app.'\npayload '../secret.txt' (parent directory) -> ''\npayload '../public_backup/backup.txt' (sibling with the same prefix) -> ''\nSAFE: neither escape returned a private file.",
+        "tests_output_tail": "......                                                                   [100%]\n6 passed in 0.21s"
+      },
+      "verdict_changed": false
+    },
+    {
+      "run_file": "evidence/human_approved_run.json",
+      "run_sha256": "2acc9e6e49ffb5ec6bf9b9a1a5ca31b2011a3e6f22be8c42764935a0985daca1",
+      "finding_id": "bandit:CWE-78",
+      "cwe": "CWE-78",
+      "original": {
+        "judge_fingerprint": null,
+        "accepted": true,
+        "attempts": 1,
+        "approval": "human, on the verified patch (the sandbox ran it automatically)",
+        "exported": true
+      },
+      "diff_sha256": "2619f793d17e567280f24ca2f95787a9b657c2bb1fa0f881d06104d3e3081b75",
+      "diff_roundtrip_ok": true,
+      "candidate_sha256": "293402993ea332e84b8e991d2c0aa3cf02dfad4a9c351ad4030ac434abe9939b",
+      "rejudged": {
+        "accepted": true,
+        "poc": "poc_cmdi.py",
+        "poc_exit": 0,
+        "tests_exit": 0,
+        "poc_output": "app under test      : app_under_test\nnormal  'example.test' -> 'example.test'\npayload 'x && echo MARK_EXECUTED' -> lines ['x && echo MARK_EXECUTED']\nSAFE: the payload was treated as plain text.",
+        "tests_output_tail": "......                                                                   [100%]\n6 passed in 0.21s"
+      },
+      "verdict_changed": false
+    },
+    {
+      "run_file": "evidence/human_approved_run.json",
+      "run_sha256": "2acc9e6e49ffb5ec6bf9b9a1a5ca31b2011a3e6f22be8c42764935a0985daca1",
+      "finding_id": "bandit:CWE-89",
+      "cwe": "CWE-89",
+      "original": {
+        "judge_fingerprint": null,
+        "accepted": true,
+        "attempts": 1,
+        "approval": "human, on the verified patch (the sandbox ran it automatically)",
+        "exported": true
+      },
+      "diff_sha256": "4eb23df3dff0ad496646e31dfa994868a3ce27fbb6cbfcf7384cce5392f7d79e",
+      "diff_roundtrip_ok": true,
+      "candidate_sha256": "dba2fc8a08a12ed5adf2a19ecb58ca5708dcc50d4b0c9d666de21f09449578a0",
+      "rejudged": {
+        "accepted": true,
+        "poc": "poc_sqli.py",
+        "poc_exit": 0,
+        "tests_exit": 0,
+        "poc_output": "app under test      : app_under_test\nnormal  'alice'     -> 1 row(s)\npayload \"' OR '1'='1\" -> 0 row(s)\nSAFE: the payload did not leak extra rows.",
+        "tests_output_tail": "......                                                                   [100%]\n6 passed in 0.22s"
+      },
+      "verdict_changed": false
+    },
+    {
+      "run_file": "evidence/human_approved_run.json",
+      "run_sha256": "2acc9e6e49ffb5ec6bf9b9a1a5ca31b2011a3e6f22be8c42764935a0985daca1",
+      "finding_id": "manual:CWE-22",
+      "cwe": "CWE-22",
+      "original": {
+        "judge_fingerprint": null,
+        "accepted": true,
+        "attempts": 1,
+        "approval": "human, on the verified patch (the sandbox ran it automatically)",
+        "exported": false
+      },
+      "diff_sha256": "f3b0fd16912062ca7abb5ce16a896dc976a1772e46db4e33e21f44aa3b2240b1",
+      "diff_roundtrip_ok": true,
+      "candidate_sha256": "986b448cd46ef85c9d109b674a7cf80cfb9ca3183c390d476b068c79ddacbe96",
+      "rejudged": {
+        "accepted": false,
+        "poc": "poc_path.py",
+        "poc_exit": 1,
+        "tests_exit": 0,
+        "poc_output": "app under test      : app_under_test\nnormal  'readme.txt' -> 'Welcome to the demo app.'\npayload '../secret.txt' (parent directory) -> ''\npayload '../public_backup/backup.txt' (sibling with the same prefix) -> 'FAKE-BACKUP-SECRET-1111'\nVULNERABLE: a file outside the public folder was returned via: sibling with the same prefix.",
+        "tests_output_tail": "......                                                                   [100%]\n6 passed in 0.21s"
+      },
+      "verdict_changed": true
+    }
+  ],
+  "summary": {
+    "patches_rejudged": 9,
+    "accepted_originally": 9,
+    "accepted_by_current_judge": 8,
+    "verdict_changed_to_rejected": 1,
+    "could_not_apply": 0,
+    "diff_roundtrip_failed": 0
+  }
+}

@@ -34,6 +34,9 @@ def create_app():
     public.mkdir()
     (public / "readme.txt").write_text("Welcome to the demo app.\n", encoding="utf-8")
     (root / "secret.txt").write_text("FAKE-SECRET-TOKEN-0000\n", encoding="utf-8")
+    backup = root / "public_backup"  # sibling with the same name prefix; see target_app/app.py
+    backup.mkdir()
+    (backup / "backup.txt").write_text("FAKE-BACKUP-SECRET-1111\n", encoding="utf-8")
 
     @app.get("/users/search")
     def search_users():

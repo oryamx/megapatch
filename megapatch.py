@@ -14,6 +14,7 @@ sandbox PoC decides which are real, and the same PoC re-tests the fix.
 """
 import argparse
 import json
+import re
 import time
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
@@ -22,11 +23,26 @@ from pathlib import Path
 import enrich
 import llm
 import run_patch_loop as loop
-from catalog import CLASSES
+from catalog import CLASSES, judge_fingerprint
 from scorerisk import FINGERPRINT_VERSION, fingerprint, score_all
 
 EVIDENCE_DIR = Path("evidence")
 WORKERS = 4  # independent sandbox runs, searches and model calls go in parallel
+PROTECTED_EVIDENCE = {"golden_run", "run_with_repair", "ranking", "sensitivity", "isolation_check"}
+
+
+def evidence_path(save_as, stamp):
+    """Where this run's evidence goes. A --save-as name can never overwrite recorded evidence.
+
+    Checked BEFORE the pipeline starts, so nobody goes through approvals and then fails."""
+    if save_as is None:
+        return EVIDENCE_DIR / f"run_{stamp}.json"
+    if not re.fullmatch(r"[A-Za-z0-9_-]{1,60}", save_as):
+        raise SystemExit("--save-as: use only letters, digits, '-' and '_' (max 60 characters)")
+    target = EVIDENCE_DIR / f"{save_as}.json"
+    if save_as in PROTECTED_EVIDENCE or target.exists():
+        raise SystemExit(f"{target} already exists or is protected evidence; choose another name")
+    return target
 
 
 def verdict_for(finding, judge):
@@ -45,7 +61,11 @@ def main():
     parser.add_argument("--eval-only", action="store_true")
     parser.add_argument("--local", action="store_true")
     parser.add_argument("--no-enrich", action="store_true", help="skip the Tavily evidence step")
+    parser.add_argument("--save-as", metavar="NAME", help="write the evidence to evidence/NAME.json (never overwrites recorded runs)")
     args = parser.parse_args()
+
+    stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    out = evidence_path(args.save_as, stamp)  # fail fast, before any approval is asked
 
     started = time.time()
     calls_before = len(llm.usage_lines())
@@ -116,7 +136,7 @@ def main():
         if patch and patch["accepted"]:
             extra = f" (after {patch['attempts']} attempts)" if patch.get("attempts", 1) > 1 else ""
             if not patch.get("exported", True):
-                return "CONFIRMED -> patch verified in the sandbox, export not approved" + extra
+                return "CONFIRMED -> patch accepted by the judge, export not approved" + extra
             return "CONFIRMED -> PATCHED, same PoC now fails" + extra
         if patch and not patch["approved"]:
             return "CONFIRMED -> patch proposed, not run (no approval)"
@@ -142,13 +162,12 @@ def main():
           f"(+ {human_review:.0f}s of human review)")
 
     EVIDENCE_DIR.mkdir(exist_ok=True)
-    stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
-    out = EVIDENCE_DIR / f"run_{stamp}.json"
     out.write_text(
         json.dumps(
             {
                 "run_at": stamp, "executor": where, "top_n": args.top, "model": llm.MODEL,
                 "inventory_fingerprint": fingerprint(), "fingerprint_version": FINGERPRINT_VERSION,
+                "judge_fingerprint": judge_fingerprint(),
                 "final_order": [
                     {"position": i, "id": r["id"], "scorerisk_rank": r["rank"], "pre_score": r["pre_score"],
                      "cvss": r["cvss"], "status": status(r["id"])}
