@@ -100,6 +100,27 @@ def build_findings():
     return _sca_findings(assets) + _sast_findings(assets)
 
 
+def scanner_counts():
+    """How raw scanner output becomes the findings ScoreRisk ranks, counted from the files
+    themselves (no number is typed by hand anywhere it is shown)."""
+    raw = json.loads(PIP_AUDIT.read_text(encoding="utf-8"))
+    findings = build_findings()
+
+    def from_scanner(name):
+        return sum(1 for f in findings if f["scanner"] == name)
+
+    return {
+        "pip_audit_entries": sum(len(dep.get("vulns", [])) for dep in raw["dependencies"]),
+        "pip_audit_packages": sum(1 for dep in raw["dependencies"] if dep.get("vulns")),
+        "pip_audit_findings": from_scanner("pip-audit (SCA)"),
+        "bandit_results": len(json.loads(BANDIT.read_text(encoding="utf-8"))["results"]),
+        "bandit_findings": from_scanner("Bandit (SAST)"),
+        "manual_findings": from_scanner("manual review"),
+        "findings": len(findings),
+        "unique_cves": len({f["cve"] for f in findings if f["cve"]}),
+    }
+
+
 if __name__ == "__main__":
     items = build_findings()
     sca = [f for f in items if f["scanner"].startswith("pip-audit")]

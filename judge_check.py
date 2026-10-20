@@ -269,6 +269,15 @@ def main():
         (out.splitlines() or [""])[-1],
     )
 
+    # What a first-time visitor sees: the five-step loop, stated with numbers computed from the files,
+    # the approval kind of each run as recorded, and one finding followed with the same PoC. Read-only.
+    code, out = run([sys.executable, "check_walkthrough.py"])
+    check(
+        "dashboard story: the five steps and the walkthrough match the recorded data",
+        code == 0 and "ALL PASSED" in out,
+        (out.splitlines() or [""])[-1],
+    )
+
     first, _ = score_all()
     second, _ = score_all()
     check("ScoreRisk is deterministic (same input -> same ranking)", first == second)
