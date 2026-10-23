@@ -278,6 +278,25 @@ def main():
         (out.splitlines() or [""])[-1],
     )
 
+    # The English / Español selector changes words only: same data in both languages, nothing left untranslated,
+    # and the selected run and finding survive a switch. Read-only.
+    code, out = run([sys.executable, "check_language.py"])
+    check(
+        "language: Spanish and English show the same data, and the interface is fully translated",
+        code == 0 and "ALL PASSED" in out,
+        (out.splitlines() or [""])[-1],
+    )
+
+    # Scanning another repository: the file and line of each finding are kept, nothing from that repository is
+    # run, every scan keeps its own folder, the two queues use no made-up values, and the demo's files are never
+    # written. Fake pip-audit output, a temporary folder, no network.
+    code, out = run([sys.executable, "check_repo_scan.py"])
+    check(
+        "repository scan: real file and line, nothing executed, one new folder per scan, two queues, demo untouched",
+        code == 0 and "ALL PASSED" in out,
+        (out.splitlines() or [""])[-1],
+    )
+
     first, _ = score_all()
     second, _ = score_all()
     check("ScoreRisk is deterministic (same input -> same ranking)", first == second)

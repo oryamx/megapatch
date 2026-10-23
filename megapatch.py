@@ -66,6 +66,9 @@ def main():
 
     stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     out = evidence_path(args.save_as, stamp)  # fail fast, before any approval is asked
+    export_dir = loop.EXPORTS / out.stem    # this run's own export folder: an earlier diff is never replaced
+    if export_dir.exists():
+        raise SystemExit(f"{export_dir} already exists; choose another --save-as name")
 
     started = time.time()
     calls_before = len(llm.usage_lines())
@@ -126,7 +129,7 @@ def main():
         print(f"\n--- {r['id']}: {r['title']} ---")
         patches[r["id"]] = loop.patch_cycle(
             judge, where, r["cwe"], verdicts[r["id"]]["evidence"],
-            auto_yes=args.yes, generate=not args.eval_only, prepared=prepared,
+            auto_yes=args.yes, generate=not args.eval_only, prepared=prepared, export_dir=export_dir,
         )
     if not patches:
         print("  nothing confirmed, nothing to patch")

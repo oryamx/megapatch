@@ -72,7 +72,76 @@ def load(name):
     return json.loads((HERE / "evidence" / name).read_text(encoding="utf-8"))
 
 
+def quickstart_checks():
+    """The quick start in the how-to block must say what the code and the README actually do, and none of its
+    commands may write into the demo's scans/, data/ or evidence/ (check_repo_scan.py runs repo_scan.py itself)."""
+    import interactive
+    import repo_scan
+    from ui_text import QUICKSTART_COMMANDS, TEXT
+
+    readme = (HERE / "README.md").read_text(encoding="utf-8")
+    lines = [line for command in QUICKSTART_COMMANDS.values() for line in command.splitlines()]
+    check("quick start: every command it shows is in the README", all(line in readme for line in lines))
+
+    both = lambda key: (TEXT[key]["en"], TEXT[key]["es"])  # noqa: E731
+    source = lambda name: (HERE / name).read_text(encoding="utf-8")  # noqa: E731
+    scan_src, view_src = source("repo_scan.py"), source("scan_view.py")
+    demo_writers = ("scans/", "data/", "evidence/", "fetch_threat_data.py", "scorerisk.py", "sensitivity.py",
+                    "pip-audit -r", "bandit -r", " -o ")
+    check("quick start: no command writes into the demo's scans/, data/ or evidence/; scans go to analysis/",
+          not any(w in line for w in demo_writers for line in lines)
+          and repo_scan.ANALYSIS_ROOT == HERE / "analysis" and "analysis/" in source(".gitignore").splitlines()
+          and 'main(write="--write" in sys.argv[1:])' in source("scorerisk.py")
+          and 'main(write="--write" in sys.argv[1:])' in source("sensitivity.py"))
+
+    megapatch_src, loop_src = source("megapatch.py"), source("run_patch_loop.py")
+    code_paths = (
+        'folder = base / "scans" / scan_id' in scan_src and "folder.mkdir(parents=True, exist_ok=False)" in scan_src
+        and 'project_dir(project, root) / "exposure"' in scan_src and 'open(folder / "scan.json", "x"' in scan_src
+        and interactive.EXPORT_ROOT.as_posix() == "out/patches" and interactive.EVIDENCE.as_posix() == "evidence"
+        and 'f"interactive_run_{session}.json"' in source("interactive.py")
+        and 'EVIDENCE_DIR = Path("evidence")' in megapatch_src and 'f"run_{stamp}.json"' in megapatch_src
+        and 'f"{save_as}.json"' in megapatch_src and "export_dir = loop.EXPORTS / out.stem" in megapatch_src
+        and 'EXPORTS = Path("out") / "patches"' in loop_src and 'open(target, "x"' in loop_src
+    )
+    named = all("analysis/<" in text for key in ("qs_scan", "qs_assets", "qs_results") for text in both(key))
+    named &= all("/exposure/" in text for text in both("qs_assets"))
+    named &= all(x in text for x in ("/scans/<", "/exposure/", "out/patches/<", "evidence/run_",
+                                     "evidence/interactive_run_") for text in both("qs_results"))
+    check("quick start: the folders it names are the ones repo_scan.py and the pipeline create (new ones each time)",
+          code_paths and named)
+
+    assets = json.loads((HERE / "data" / "assets.json").read_text(encoding="utf-8"))
+    fields = ("internet_facing", "requires_auth", "environment", "sensitive_data")
+    en_assets, es_assets = both("qs_assets")
+    check("quick start: the exposure form asks the four fields the demo uses, and an unanswered one stays unknown",
+          repo_scan.EXPOSURE_FIELDS == fields and all(set(fields) <= set(a) for a in assets["assets"].values())
+          and all(f'("{f}", "rp_x_' in view_src for f in fields)
+          and "*Unknown*" in en_assets and "*Desconocido*" in es_assets and "never" in en_assets
+          and "nunca" in es_assets)
+
+    env_example = source(".env.example")
+    variables = ("NEBIUS_API_KEY", "NEBIUS_PROJECT_ID", "TAVILY_API_KEY", "MEGAPATCH_ENABLE_INTERACTIVE")
+    check("quick start: the credentials it names are the ones in .env.example",
+          all(v in env_example for v in variables) and all(v in text for v in variables for text in both("qs_analyze")))
+
+    pins = source("requirements-scan.txt")
+    check("quick start: what it says about the scan matches the code (pinned scanners, local mode on 127.0.0.1 only, "
+          "nothing installed)",
+          "bandit==" in pins and "pip-audit==" in pins and "requirements-scan.txt" in QUICKSTART_COMMANDS["qs_install"]
+          and '"--local-scan" not in sys.argv[1:]' in view_src and "if not listens_on_loopback_only():" in view_src
+          and "--server.address 127.0.0.1 -- --local-scan" in QUICKSTART_COMMANDS["qs_scan"]
+          and all(x in scan_src for x in ('"--no-deps", "--disable-pip"', '"not pinned with =="'))
+          and all("`requirements-scan.txt`" in text for text in both("qs_install")))
+    en_scope, es_scope = both("qs_scope")
+    check("quick start: it says the demo shows recorded runs and that PoCs and patches only work with the practice app",
+          "recorded runs" in en_scope and "corridas grabadas" in es_scope
+          and all("target_app/" in s and ("cannot verify or patch" in s or "no puede verificarlos ni parchearlos" in s)
+                  for s in (en_scope, es_scope)))
+
+
 def main():
+    quickstart_checks()
     counts = scanner_counts()
     ranked, _ = score_all()
     n_kev = len({r["cve"] for r in ranked if r["kev"]})
@@ -137,6 +206,10 @@ def main():
     check("walkthrough (repair run): the repaired patch is shown as rejected once, then repaired from the judge's output",
           rep["walk_choice"] == repaired_id and any("Attempt 1 was rejected by the judge" in c for c in rep["captions"])
           and "after one repair" in " ".join(rep["strip"]), f"({repaired_id})")
+
+    from ui_text import QUICKSTART_COMMANDS
+    check("quick start: the how-to block shows every command as a code block, exactly as defined",
+          all(cmd in b["codes"] for cmd in QUICKSTART_COMMANDS.values()))
 
     captions = " ".join(b["captions"])
     check("limits are visible without opening anything: in-process PoCs, open outbound network, 'accepted' is not 'safe'",

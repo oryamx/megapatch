@@ -1,6 +1,9 @@
 """MegaPatch dashboard: the prioritized queue and the before/after evidence.
 
-Run:  streamlit run dashboard.py
+Run:  streamlit run dashboard.py --server.address 127.0.0.1
+      streamlit run dashboard.py --server.address 127.0.0.1 -- --local-scan   (also scan a Python repository of this machine)
+The address only limits incoming connections (the page answers on this machine only); it does not stop the
+outgoing requests a local scan makes (see repo_scan.py).
 Opens on evidence/human_approved_run_b.json (the run made with the current judge, approved
 by a person), falling back to golden_run.json, and re-computes ScoreRisk offline from the
 frozen scanner outputs and threat-data snapshot. A sidebar selector lists the other
@@ -8,6 +11,9 @@ recorded runs, but only runs that describe the CURRENT inventory and scoring set
 fingerprint; older files without one must have exactly the same finding ids). Incompatible
 runs are hidden and exact duplicates are dropped.
 No API keys needed, and nothing here calls a model or the sandbox.
+
+The interface is in English or Spanish (sidebar selector, English first). Every text comes from
+ui_text.py; the language never changes data, scores or results.
 """
 import hashlib
 import json
@@ -26,6 +32,10 @@ from catalog import CLASSES, judge_fingerprint  # noqa: E402
 from evidence_utils import describe_export  # noqa: E402
 from ingest import scanner_counts  # noqa: E402
 from scorerisk import FINGERPRINT_VERSION, fingerprint, score_all  # noqa: E402
+import scan_view  # noqa: E402
+from ui_text import (  # noqa: E402
+    LANGS, QUICKSTART_COMMANDS, QUICKSTART_STEPS, band_basis, data_label, export_text, stage_label, status_label, tr,
+)
 
 EVIDENCE = Path("evidence")
 # The page opens on the first of these that exists: the run made with the current judge and approved
@@ -34,6 +44,27 @@ DEFAULT_RUNS = ("human_approved_run_b.json", "golden_run.json")
 
 st.set_page_config(page_title="MegaPatch", layout="wide")
 
+# The language only changes words. Its label is the same in both languages, so switching never resets it.
+lang = st.sidebar.radio(tr("en", "lang_label"), list(LANGS), format_func=LANGS.get, horizontal=True, key="lang")
+
+
+def t(key, **values):
+    return tr(lang, key, **values)
+
+
+local_scan = scan_view.local_scan_status()
+if local_scan == "on":
+    st.sidebar.info(t("rp_sidebar_on"))
+elif local_scan != "off":  # asked for, but refused (see scan_view.local_scan_status)
+    st.sidebar.error(t("rp_sidebar_refused"))
+
+
+def remembered_index(options, memory_key, name_of=lambda option: option):
+    """Index of the option chosen before (kept in session state), so a selector whose label changes with
+    the language keeps its choice instead of resetting."""
+    previous = st.session_state.get(memory_key)
+    return next((i for i, option in enumerate(options) if name_of(option) == previous), 0)
+
 
 def approvals_of(data):
     """How each patch of a run was approved, read from the data, never from the file name."""
@@ -41,20 +72,20 @@ def approvals_of(data):
 
 
 def approval_kind(path):
-    """Short label for the selector: 'human approval', 'automatic approval (--yes)' or 'mixed'."""
+    """Kind of approval for the selector, read from the run's data."""
     try:
         approvals = approvals_of(json.loads(path.read_text(encoding="utf-8")))
     except (OSError, ValueError):
         return "unreadable"
     if not approvals:
-        return "no patches"
+        return "no_patches"
     if all(a.startswith("human") for a in approvals):
-        return "human approval"
+        return "human"
     if all(a.startswith("auto") for a in approvals):
-        return "automatic approval (--yes)"
+        return "auto"
     if all(a.startswith("none") for a in approvals):
-        return "no export decision (judge rejected)"
-    return "mixed or unrecorded approval"
+        return "none"
+    return "mixed"
 
 
 @st.cache_data(ttl=600)
@@ -95,50 +126,32 @@ def chosen_run_path():
             seen_content.add(digest)
             options.append(path)
     if hidden:
-        st.sidebar.caption(
-            f"{hidden} other run(s) hidden: they describe a different findings inventory or scoring set-up."
-        )
+        st.sidebar.caption(t("hidden_runs", n=hidden))
     if not options:
         return None
     if len(options) == 1:
         return options[0]
     known = {
-        "golden_run.json": "Recorded demo run",
-        "run_with_repair.json": "Recorded run with a repaired patch",
-        "human_approved_run.json": "Run approved by a person",
-        "human_approved_run_b.json": "Recorded run with the current judge",
+        "golden_run.json": "run_golden",
+        "run_with_repair.json": "run_repair",
+        "human_approved_run.json": "run_human",
+        "human_approved_run_b.json": "run_b",
     }
+
     def title_of(p):
         if p.name in known:
-            return known[p.name]
+            return t(known[p.name])
         if p.name.startswith("interactive_run_"):
-            return "Interactive session " + p.stem.removeprefix("interactive_run_")
+            return t("run_session", sid=p.stem.removeprefix("interactive_run_"))
         return p.name
 
-    names = {p: f"{title_of(p)} - {approval_kind(p)}" for p in options}
-    return st.sidebar.selectbox("Run to display", options, format_func=lambda p: names[p])
-
-
-def status_label(raw):
-    if "export not approved" in raw:  # historic wording said "verified in the sandbox"
-        return "Judge accepted it; the person declined to export"
-    if "export pending" in raw:
-        return "Judge accepted it; the export was never confirmed (the session stopped before finishing)"
-    if "export FAILED" in raw:
-        return "Judge accepted it; the export failed and was not recorded as exported"
-    if "PATCHED" in raw:
-        return "Confirmed, patched and re-tested"
-    if "REJECTED" in raw:
-        return "Confirmed, patch rejected"
-    if "not run" in raw:
-        return "Confirmed, patch awaiting approval"
-    if raw == "NOT_VERIFIABLE":
-        return "Not verifiable (no PoC for this class)"
-    if raw == "NOT_REPRODUCIBLE":
-        return "Not reproducible"
-    if raw.startswith("not verified (outside top N)"):
-        return "Ranked, outside verification budget"
-    return raw
+    names = {p: f"{title_of(p)} - {t('kind_' + approval_kind(p))}" for p in options}
+    choice = st.sidebar.selectbox(
+        t("run_to_display"), options, index=remembered_index(options, "run_selected", lambda p: p.name),
+        format_func=lambda p: names[p], key=f"run_choice_{lang}",
+    )
+    st.session_state["run_selected"] = choice.name
+    return choice
 
 
 def run_signature():
@@ -164,10 +177,25 @@ ranked, threat, run, run_path, sensitivity, counts = load(run_signature())
 by_id = {r["id"]: r for r in ranked}
 
 st.title("MegaPatch")
-st.caption(
-    "Rank what matters, prove it is exploitable by running the exploit, patch it, "
-    "and re-run the same exploit. The score proposes; execution disposes."
-)
+st.caption(t("tagline"))
+if run_path is not None:
+    st.info(t("recorded_notice", file=run_path.name))
+
+# ---------- how to use: what the team brings, what MegaPatch does and produces, what a person reviews ----------
+with st.expander(t("howto_title"), expanded=True):
+    top_left, top_right = st.columns(2)
+    top_left.markdown(t("howto_provides"))
+    top_right.markdown(t("howto_does"))
+    bottom_left, bottom_right = st.columns(2)
+    bottom_left.markdown(t("howto_produces"))
+    bottom_right.markdown(t("howto_review"))
+    # Quick start: the explanation follows the language; the commands are shown exactly as they must be typed.
+    st.markdown(t("qs_title"))
+    st.warning(t("qs_scope"))
+    for step in QUICKSTART_STEPS:
+        st.markdown(t(step))
+        if step in QUICKSTART_COMMANDS:
+            st.code(QUICKSTART_COMMANDS[step], language="bash")
 
 # ---------- the loop at a glance: what a first-time visitor needs before any table ----------
 n_kev_cves = len({r["cve"] for r in ranked if r["kev"]})
@@ -176,12 +204,10 @@ n_kev_cves = len({r["cve"] for r in ranked if r["kev"]})
 def story_steps(run):
     """The five steps of the loop as short headlines, plus one line of detail, all from the selected run.
     Headlines stay short so five columns remain legible on a laptop; the numbers go in the detail line."""
-    funnel = (
-        f"{counts['pip_audit_entries']} pip-audit entries and {counts['bandit_results']} Bandit results became "
-        f"{counts['findings']} distinct findings ({counts['unique_cves']} unique CVEs, {n_kev_cves} in CISA KEV)."
-    )
+    funnel = t("funnel", pip=counts["pip_audit_entries"], bandit=counts["bandit_results"],
+               findings=counts["findings"], cves=counts["unique_cves"], kev=n_kev_cves)
     if not run:
-        return [("Prioritize", f"**{counts['findings']} findings** ranked by ScoreRisk")], funnel
+        return [(t("step_prioritize"), t("s_prioritize_norun", findings=counts["findings"]))], funnel
     verdicts = run["verdicts"]
     confirmed = sum(1 for v in verdicts.values() if v["verdict"] == "CONFIRMED")
     unverifiable = sum(1 for v in verdicts.values() if v["verdict"] == "NOT_VERIFIABLE")
@@ -192,28 +218,25 @@ def story_steps(run):
     kinds = [describe_export(p)[0] for p in patches]
     if approvals and all(a.startswith("human") for a in approvals):
         approved = sum(1 for k in kinds if k in ("exported", "pending", "failed"))
-        last = f"**{approved} of {len(approvals)} approved** by a person before export"
+        last = t("s_approve_human", a=approved, b=len(approvals))
     elif approvals and all(a.startswith("auto") for a in approvals):
-        last = "**Automatic (`--yes`)**: no person approved these exports"
+        last = t("s_approve_auto")
     elif approvals:
-        last = "Mixed or unrecorded approval: see each patch in the *Walkthrough* tab"
+        last = t("s_approve_mixed")
     else:
-        last = "No patch reached the approval step"
+        last = t("s_approve_none")
     usage = run["usage"]
     steps = [
-        ("Prioritize", f"**{counts['findings']} findings** ranked by ScoreRisk; the top {run['top_n']} verified"),
-        ("Prove", f"**{confirmed} confirmed** by an exploit in a Nebius sandbox"),
-        ("Patch", f"**{len(patches)} patch(es)** written by NVIDIA Nemotron on Nebius Token Factory"),
-        ("Re-test", f"Same PoC and tests: **{accepted} accepted**"
-                    + (f" ({repaired} after one repair)" if repaired else "")
-                    + f", {len(patches) - accepted} rejected"),
-        ("Approve", last),
+        (t("step_prioritize"), t("s_prioritize", findings=counts["findings"], top=run["top_n"])),
+        (t("step_prove"), t("s_prove", n=confirmed)),
+        (t("step_patch"), t("s_patch", n=len(patches))),
+        (t("step_retest"), t("s_retest_head", n=accepted)
+         + (t("s_retest_repair", n=repaired) if repaired else "")
+         + t("s_retest_tail", n=len(patches) - accepted)),
+        (t("step_approve"), last),
     ]
-    detail = (
-        f"{funnel} Of the top {run['top_n']}, {unverifiable} have no PoC and are reported as not verifiable, "
-        f"never as safe. Patches by `{run['model']}`: {usage['nemotron_calls']} calls, about "
-        f"${usage['est_cost_usd']:.4f}."
-    )
+    detail = t("story_detail", funnel=funnel, top=run["top_n"], unv=unverifiable, model=run["model"],
+               calls=usage["nemotron_calls"], cost=f"{usage['est_cost_usd']:.4f}")
     return steps, detail
 
 
@@ -221,31 +244,13 @@ steps, story_detail = story_steps(run)
 for column, (number, (title, text)) in zip(st.columns(len(steps)), enumerate(steps, 1)):
     column.markdown(f"**{number} · {title}**  \n{text}")
 st.caption(story_detail)
-st.caption(
-    "Recorded runs on our own practice app, not real-world code. The PoCs call the app in-process (Flask's test "
-    "client) inside the sandbox, whose outbound network is not blocked. \"Accepted by the judge\" means the same "
-    "PoC and the functional tests passed, not \"safe in production\". The *Walkthrough* tab follows one finding "
-    "through all five steps."
-)
-with st.expander("What you are looking at, and what it does not show"):
+st.caption(t("limits_caption"))
+with st.expander(t("limits_title")):
     st.markdown(
-        f"""
-- **Input:** real scanner output on deliberately chosen input. pip-audit over {counts['pip_audit_packages']}
-  outdated pinned packages reported {counts['pip_audit_entries']} entries, {counts['pip_audit_findings']} distinct
-  advisories once repeats are removed. Bandit over our practice app reported {counts['bandit_results']} results,
-  kept as {counts['bandit_findings']} findings (one per class we can verify), and {counts['manual_findings']} finding
-  comes from manual review. Total: {counts['findings']} distinct findings, {counts['unique_cves']} unique CVEs,
-  {n_kev_cves} of them in CISA KEV.
-- **Declared, not discovered:** which asset each finding belongs to and how exposed it is (a fictional inventory).
-- **Verifiable by execution:** three vulnerability classes, only in our own practice app. Everything else is
-  ranked and reported as not verifiable, never as safe.
-- **The PoCs run in-process** inside the sandbox; they do not test network reachability.
-- **Isolation means no secrets and not our machine:** the sandbox's outbound network is not blocked and code runs
-  as root inside it.
-- **Approval:** runs made with `--yes` skipped every human approval question. Each run's banner says which kind it
-  is, read from its own data.
-- **Not measured:** there is no precision figure for the ranking.
-"""
+        t("limits_body", pkgs=counts["pip_audit_packages"], pip=counts["pip_audit_entries"],
+          advisories=counts["pip_audit_findings"], bandit=counts["bandit_results"],
+          bandit_findings=counts["bandit_findings"], manual=counts["manual_findings"], findings=counts["findings"],
+          cves=counts["unique_cves"], kev=n_kev_cves)
     )
 
 # ---------- headline numbers ----------
@@ -255,127 +260,93 @@ if run:
     patched = [i for i, p in run["patches"].items() if p.get("accepted")]
     exported_ids = [i for i, p in run["patches"].items() if p.get("exported")]
     cols = st.columns(6)
-    cols[0].metric("Findings ranked", len(ranked))
-    cols[1].metric("Confirmed", len(confirmed), help="Confirmed by exploit: the PoC fired in the sandbox (practice app)")
-    recorded_judge = run.get("judge_fingerprint") or "not recorded"
-    cols[2].metric(
-        "Judge accepted", len(patched),
-        help=f"Accepted by the judge version RECORDED IN THIS RUN (judge fingerprint: {recorded_judge}; "
-        f"the current judge is {judge_fingerprint()}). The patch stopped the same exploit and the "
-        "functional tests passed; the judge only covers what its PoCs and tests cover.",
-    )
-    cols[3].metric("Exported", len(exported_ids), help="Patches that were exported after the approval step of this run")
-    cols[4].metric("Nemotron cost", f"${run['usage']['est_cost_usd']:.4f}",
-                   help="Estimated from the token counts of this run's Nemotron calls")
-    cols[5].metric("Machine time", f"{run['duration_s']:.0f} s")
-    legacy = (
-        ""
-        if run.get("fingerprint_version") == FINGERPRINT_VERSION
-        else " This run predates the full inputs fingerprint; it is matched to the current ranking by "
-        "identical finding ids, and its recorded ranks and scores equal the current ones."
-    )
-    st.caption(
-        f"Run `{run_path.name}` on {run['executor']} with {run['model']}. "
-        f"Top {run['top_n']} entered verification.{legacy}"
-    )
+    cols[0].metric(t("m_findings"), len(ranked))
+    cols[1].metric(t("m_confirmed"), len(confirmed), help=t("m_confirmed_help"))
+    recorded_judge = run.get("judge_fingerprint") or t("not_recorded")
+    cols[2].metric(t("m_accepted"), len(patched), help=t("m_accepted_help", rec=recorded_judge, now=judge_fingerprint()))
+    cols[3].metric(t("m_exported"), len(exported_ids), help=t("m_exported_help"))
+    cols[4].metric(t("m_cost"), f"${run['usage']['est_cost_usd']:.4f}", help=t("m_cost_help"))
+    cols[5].metric(t("m_time"), f"{run['duration_s']:.0f} s")
+    legacy = "" if run.get("fingerprint_version") == FINGERPRINT_VERSION else t("legacy")
+    st.caption(t("run_caption", file=run_path.name, executor=data_label(run["executor"], lang), model=run["model"],
+                 top=run["top_n"], legacy=legacy))
     judge_now = judge_fingerprint()
     if run.get("judge_fingerprint") != judge_now:
-        st.info(
-            "**Judge version.** This run "
-            + ("did not record which version of the judge produced it" if not run.get("judge_fingerprint")
-               else "was judged with a different version of the PoCs and tests")
-            + ". The path traversal check was strengthened afterwards to also catch an escape into a sibling "
-            "directory whose name starts with `public` (a `startswith` comparison lets it through). "
-            "Its patches were **not** re-judged inside this run, so read its path traversal verdict with that "
-            f"in mind. Judge recorded in this run: `{run.get('judge_fingerprint') or 'not recorded'}`; "
-            f"current judge: `{judge_now}`. A separate re-judge record, when present, is shown in the "
-            "*Before / after* tab."
-        )
+        what = t("judge_what_missing") if not run.get("judge_fingerprint") else t("judge_what_other")
+        st.info(t("judge_note", what=what, rec=run.get("judge_fingerprint") or t("not_recorded"), now=judge_now))
     approvals = approvals_of(run)
     kinds = [describe_export(p)[0] for p in run["patches"].values()]
     exported, pending, failed = kinds.count("exported"), kinds.count("pending"), kinds.count("failed")
     if approvals and all(a.startswith("human") for a in approvals):
         # A pending or failed export was still approved by the person; it just did not finish.
-        unfinished = (
-            f" ({exported} exported, {pending} pending, {failed} failed)" if pending or failed else ""
-        )
-        st.success(
-            f"**Human approval.** A person was asked about each patch the judge accepted before export: "
-            f"{exported + pending + failed} of {len(approvals)} were approved{unfinished}. "
-            "Model-written code ran automatically, but only inside the sandbox."
-        )
+        unfinished = t("banner_unfinished", e=exported, p=pending, f=failed) if pending or failed else ""
+        st.success(t("banner_human", approved=exported + pending + failed, total=len(approvals), unfinished=unfinished))
     elif approvals and all(a.startswith("auto") for a in approvals):
-        st.warning(
-            "**Automatic approval (`--yes`).** This run does not show a person approving any patch; "
-            "every question was skipped by the flag."
-        )
+        st.warning(t("banner_auto"))
     elif approvals and all(a.startswith("none") for a in approvals):
-        st.info(
-            "**No export decision.** The judge did not accept the patch, so no person was asked to approve "
-            "anything and nothing was exported."
-        )
+        st.info(t("banner_none"))
     elif approvals:
-        st.info("**Mixed or unrecorded approval.** Check the `approval` field of each patch below.")
+        st.info(t("banner_mixed"))
 else:
-    st.info("No run found yet. Run `python megapatch.py` to create one.")
+    st.info(t("no_run"))
 
-tab_walk, tab_queue, tab_proof, tab_evidence, tab_why, tab_repro, tab_live = st.tabs(
-    ["Walkthrough", "Priority queue", "Before / after", "Public evidence", "Why this order", "Reproduce it",
-     "Analyze (local)"]
+tab_walk, tab_queue, tab_proof, tab_evidence, tab_why, tab_repro, tab_repo, tab_live = st.tabs(
+    [t("tab_walk"), t("tab_queue"), t("tab_proof"), t("tab_evidence"), t("tab_why"), t("tab_repro"), t("tab_repo"),
+     t("tab_live")]
 )
 
 # ---------- 0. one finding, end to end ----------
 with tab_walk:
     if not run or not run["patches"]:
-        st.info("This run has no patched finding to follow. Pick another run in the sidebar.")
+        st.info(t("walk_none"))
     else:
         followed = [i["id"] for i in run["final_order"] if i["id"] in run["patches"]]
         fid = st.selectbox(
-            "Follow one finding through the loop", followed, key="walk_choice",
+            t("walk_select"), followed, index=remembered_index(followed, "walk_selected"),
+            key="walk_choice" if lang == "en" else f"walk_choice_{lang}",
             format_func=lambda i: f"{i}: {by_id.get(i, {}).get('title', i)}",
         )
+        st.session_state["walk_selected"] = fid
         r, patch = by_id.get(fid, {}), run["patches"][fid]
-        poc = CLASSES[r["cwe"]]["poc"] if r.get("cwe") in CLASSES else "the PoC"
+        poc = CLASSES[r["cwe"]]["poc"] if r.get("cwe") in CLASSES else t("the_poc")
         verdict = run["verdicts"].get(fid, {})
         band, basis = band_for(r, verdict.get("verdict")) if r else ("n/a", "")
-        cvss = f"{r['cvss']}" if r.get("cvss") is not None else "n/a (code finding)"
+        cvss = f"{r['cvss']}" if r.get("cvss") is not None else t("cvss_code")
 
-        st.markdown("##### Step 1 · Prioritized by ScoreRisk (a rule, not a model)")
+        st.markdown(t("step1_h"))
         st.markdown(
-            f"ScoreRisk rank **#{r.get('rank', '?')} of {len(ranked)}** (score {r.get('pre_score', '?')}), band "
-            f"**{band}**: {basis}. Source: {r.get('scanner', 'n/a')}. CVSS {cvss}; "
-            f"{'in' if r.get('kev') else 'not in'} CISA KEV; asset "
-            f"{'internet-facing' if r.get('internet_facing') else 'internal'} (declared)."
+            t("step1_body", rank=r.get("rank", "?"), total=len(ranked), score=r.get("pre_score", "?"), band=band,
+              basis=band_basis(basis, lang), source=data_label(r.get("scanner", "n/a"), lang), cvss=cvss,
+              kev=t("in_kev") if r.get("kev") else t("not_in_kev"),
+              exposure=t("internet_facing") if r.get("internet_facing") else t("internal"))
         )
-        st.markdown(f"##### Step 2 · Proven by execution: `{poc}` against the vulnerable app, in the sandbox")
-        st.caption(f"Verdict: **{verdict.get('verdict', 'n/a')}** (exit 1 means the exploit fired).")
+        st.markdown(t("step2_h", poc=poc))
+        st.caption(t("verdict_caption", v=verdict.get("verdict", "n/a")))
         st.code(verdict.get("evidence", ""), language="text", wrap_lines=True)
 
-        st.markdown("##### Step 3 · Patched by Nemotron")
+        st.markdown(t("step3_h"))
         history = patch.get("attempt_history", [])
         st.caption(
-            f"`{run['model']}` through Nebius Token Factory. "
-            + (f"Attempt 1 was rejected by the judge; its output went back to the model, which wrote attempt "
-               f"{patch.get('attempts')}. The *Before / after* tab shows the rejected attempt."
-               if history else "Accepted at the first attempt." if patch.get("accepted") else "")
+            t("step3_via", model=run["model"])
+            + (t("step3_repaired", n=patch.get("attempts")) if history
+               else t("step3_first") if patch.get("accepted") else "")
         )
         st.code(patch["diff"], language="diff")
 
-        st.markdown(f"##### Step 4 · Re-tested with the same `{poc}` and the functional tests")
+        st.markdown(t("step4_h", poc=poc))
         tests_tail = ((patch.get("tests_output") or "").strip().splitlines() or ["n/a"])[-1]
         st.code(f"{patch.get('poc_output') or ''}\n\ntests: {tests_tail}", language="text", wrap_lines=True)
         st.caption(
-            ("Accepted: the PoC no longer fires (exit 0) and the functional tests pass (exit 0)."
-             if patch.get("accepted") else
-             f"Rejected: PoC exit {patch.get('poc_exit')}, tests exit {patch.get('tests_exit')}.")
-            + " The judge only covers what its PoC and tests cover."
-            + ("" if run.get("judge_fingerprint") == judge_fingerprint() else
-               " This run was judged by an older version of the judge (see the note at the top).")
+            (t("step4_accepted") if patch.get("accepted")
+             else t("step4_rejected", pe=patch.get("poc_exit"), te=patch.get("tests_exit")))
+            + t("step4_coverage")
+            + ("" if run.get("judge_fingerprint") == judge_fingerprint() else t("step4_older"))
         )
 
-        st.markdown("##### Step 5 · Approval before export")
-        _, export_text = describe_export(patch)
-        st.markdown(f"{export_text[:1].upper()}{export_text[1:]}.  \n_approval field: {patch.get('approval', 'n/a')}_")
+        st.markdown(t("step5_h"))
+        export_state = export_text(patch, lang)
+        st.markdown(f"{export_state[:1].upper()}{export_state[1:]}.  \n"
+                    f"_{t('approval_field')}: {patch.get('approval', 'n/a')}_")
 
 # ---------- 1. queue ----------
 with tab_queue:
@@ -387,32 +358,26 @@ with tab_queue:
     rise = min(minor_but_kev, key=lambda r: r["rank"]) if minor_but_kev else ranked[0]
 
     def describe(r):
-        where = "internet-facing (declared)" if r["internet_facing"] else "internal asset (declared)"
+        where = t("where_internet") if r["internet_facing"] else t("where_internal")
         epss = f"{r['epss']:.3f}" if r["epss"] is not None else "n/a"
-        return f"EPSS {epss}, {'in' if r['kev'] else 'not in'} CISA KEV, {where}"
+        return t("describe", epss=epss, kev=t("in_kev") if r["kev"] else t("not_in_kev"), where=where)
 
     n_cves = len({r["cve"] for r in ranked if r["cve"]})
     n_kev = len({r["cve"] for r in ranked if r["kev"]})
     n_rare = len({r["cve"] for r in ranked if r["cve"] and r["epss"] is not None and r["epss"] < 0.05})
-    st.markdown(
-        f"**The scanners produced {len(ranked)} distinct findings ({n_cves} unique CVEs). "
-        f"{n_kev} {'is' if n_kev == 1 else 'are'} in CISA KEV; {n_rare} have an EPSS below 0.05.**"
-    )
+    st.markdown(t("queue_summary", n=len(ranked), cves=n_cves, kev=n_kev,
+                  verb=t("verb_is") if n_kev == 1 else t("verb_are"), rare=n_rare))
     left, right = st.columns(2)
-    left.markdown(
-        f"**Looks urgent, is not.** {drop['title']} has CVSS {drop['cvss']} "
-        f"(#{drop['cvss_rank']} by severity) but ScoreRisk puts it at **#{drop['rank']}**: {describe(drop)}."
-    )
-    right.markdown(
-        f"**Looks minor, is not.** {rise['title']} has CVSS {rise['cvss']} "
-        f"(#{rise['cvss_rank']} by severity) but ScoreRisk puts it at **#{rise['rank']}**: {describe(rise)}."
-    )
+    left.markdown(t("looks_urgent", title=drop["title"], cvss=drop["cvss"], crank=drop["cvss_rank"],
+                    rank=drop["rank"], desc=describe(drop)))
+    right.markdown(t("looks_minor", title=rise["title"], cvss=rise["cvss"], crank=rise["cvss_rank"],
+                     rank=rise["rank"], desc=describe(rise)))
 
     statuses = {}
     final_pos = {}
     if run:
         for item in run["final_order"]:
-            statuses[item["id"]] = status_label(item["status"])
+            statuses[item["id"]] = status_label(item["status"], lang)
             final_pos[item["id"]] = item["position"]
     verdict_of = {fid: v["verdict"] for fid, v in (run or {}).get("verdicts", {}).items()}
     rows = []
@@ -423,14 +388,14 @@ with tab_queue:
                 "Queue #": final_pos.get(r["id"], r["rank"]),
                 "Id": r["id"],
                 "Finding": r["title"],
-                "Status": statuses.get(r["id"], "Ranked, outside verification budget"),
+                "Status": statuses.get(r["id"], t("st_outside_budget")),
                 "Band": band,
-                "Basis for the band": basis,
+                "Basis for the band": band_basis(basis, lang),
                 "ScoreRisk": r["pre_score"],
                 "ScoreRisk rank": r["rank"],
                 "CVSS": f"{r['cvss']:.1f}" if r["cvss"] is not None else "n/a",
                 "CVSS rank": r["cvss_rank"],
-                "In KEV": "yes" if r["kev"] else "no",
+                "In KEV": t("yes") if r["kev"] else t("no"),
                 "EPSS": f"{r['epss']:.3f}" if r["epss"] is not None else "n/a",  # code findings have no CVE
             }
         )
@@ -438,32 +403,27 @@ with tab_queue:
     # Fixed widths that add up to under 800 px, so every column is visible on a 1280 px desktop with the
     # sidebar open; the long columns (ids, band basis, both ranks) are in the full table below.
     queue_columns = {
-        "Queue #": st.column_config.NumberColumn("#", width=40, help="Position in the final queue"),
-        "Finding": st.column_config.TextColumn("Finding", width=220),
-        "Status": st.column_config.TextColumn("Status", width=240),
-        "Band": st.column_config.TextColumn("Band", width=60, help="Simplified, SSVC-inspired; basis in the full table"),
+        "Queue #": st.column_config.NumberColumn("#", width=40, help=t("col_queue_help")),
+        "Finding": st.column_config.TextColumn(t("col_finding"), width=220),
+        "Status": st.column_config.TextColumn(t("col_status"), width=240),
+        "Band": st.column_config.TextColumn(t("col_band"), width=60, help=t("col_band_help")),
         "ScoreRisk": st.column_config.ProgressColumn("ScoreRisk", min_value=0, max_value=100, format="%.1f", width=86),
         "CVSS": st.column_config.TextColumn("CVSS", width=50),
-        "In KEV": st.column_config.TextColumn("KEV", width=44, help="Listed in CISA's Known Exploited Vulnerabilities catalog"),
+        "In KEV": st.column_config.TextColumn("KEV", width=44, help=t("col_kev_help")),
         "EPSS": st.column_config.TextColumn("EPSS", width=56),
     }
     st.dataframe(df[list(queue_columns)], hide_index=True, column_config=queue_columns)
-    with st.expander("Full table: finding ids, the basis of each band, and both ranks"):
+    with st.expander(t("full_table")):
         full_columns = {
             "Queue #": st.column_config.NumberColumn("#", width=40),
             "Id": st.column_config.TextColumn("Id", width=190),
-            "Band": st.column_config.TextColumn("Band", width=60),
-            "Basis for the band": st.column_config.TextColumn("Basis for the band", width=330),
-            "ScoreRisk rank": st.column_config.NumberColumn("ScoreRisk rank", width=90),
-            "CVSS rank": st.column_config.NumberColumn("CVSS rank", width=90),
+            "Band": st.column_config.TextColumn(t("col_band"), width=60),
+            "Basis for the band": st.column_config.TextColumn(t("col_basis"), width=330),
+            "ScoreRisk rank": st.column_config.NumberColumn(t("col_rank"), width=90),
+            "CVSS rank": st.column_config.NumberColumn(t("col_cvss_rank"), width=90),
         }
         st.dataframe(df[list(full_columns)], hide_index=True, column_config=full_columns)
-    st.caption(
-        "Confirmed findings jump to the top of the queue regardless of their pre-score. "
-        "Findings without a PoC are ranked but reported as not verifiable, never as safe. "
-        "Bands are a simplified mapping inspired by CISA's SSVC, not the official decision tree; "
-        "asset exposure is declared in a fictional practice inventory."
-    )
+    st.caption(t("queue_caption"))
 
     def short_label(r):
         head, _, tail = r["id"].partition(":")
@@ -472,28 +432,32 @@ with tab_queue:
     # Label only the findings this page talks about: the ones a PoC can verify, the KEV-listed one that rises
     # and the critical-looking one that drops. Every other dot keeps its details in the tooltip and the table.
     story_ids = {r["id"] for r in ranked if r.get("cwe") in CLASSES} | {drop["id"], rise["id"]}
+    kev_in, kev_out = t("legend_kev"), t("legend_not_kev")
     chart_df = pd.DataFrame(
         [
             {
                 "Finding": r["id"], "CVSS": r["cvss"], "ScoreRisk": r["pre_score"], "Rank": r["rank"],
-                "Tag": f"#{r['rank']} {short_label(r)}" + (" (in KEV)" if r["kev"] else ""),
+                "Tag": f"#{r['rank']} {short_label(r)}" + (t("tag_kev") if r["kev"] else ""),
                 "Story": r["id"] in story_ids,
-                "CISA KEV": "in KEV" if r["kev"] else "not in KEV", "Title": r["title"],
+                "CISA KEV": kev_in if r["kev"] else kev_out, "Title": r["title"],
             }
             for r in ranked
             if r["cvss"] is not None
         ]
     )
     base = alt.Chart(chart_df).encode(
-        x=alt.X("CVSS:Q", scale=alt.Scale(domain=[2, 10.4]), title="CVSS base score (severity)"),
-        y=alt.Y("ScoreRisk:Q", scale=alt.Scale(domain=[0, 108]), title="ScoreRisk (exploitability + exposure)"),
+        x=alt.X("CVSS:Q", scale=alt.Scale(domain=[2, 10.4]), title=t("axis_x")),
+        y=alt.Y("ScoreRisk:Q", scale=alt.Scale(domain=[0, 108]), title=t("axis_y")),
     )
     points = base.mark_circle(size=90, opacity=0.75).encode(
         color=alt.Color(
-            "CISA KEV:N", scale=alt.Scale(domain=["in KEV", "not in KEV"], range=["#e8710a", "#4c78a8"]),
+            "CISA KEV:N", scale=alt.Scale(domain=[kev_in, kev_out], range=["#e8710a", "#4c78a8"]),
             legend=alt.Legend(orient="top", title=None),  # on top, so a narrow screen keeps the full plot width
         ),
-        tooltip=["Finding", "Title", "CVSS", "ScoreRisk", alt.Tooltip("Rank:Q", title="ScoreRisk rank"), "CISA KEV"],
+        tooltip=[
+            alt.Tooltip("Finding:N", title=t("col_finding")), alt.Tooltip("Title:N", title=t("tt_title")),
+            "CVSS", "ScoreRisk", alt.Tooltip("Rank:Q", title=t("col_rank")), "CISA KEV",
+        ],
     )
     # Findings at the same point share one label. Labels sit beside their dot, never on it: to its left in the
     # right half of the chart (where the plot edge is close), to its right otherwise.
@@ -516,11 +480,7 @@ with tab_queue:
         if side.any():
             layers.append(label_layer(label_df[side], align, dx))
     st.altair_chart(alt.layer(*layers).properties(height=380), width="stretch")
-    st.caption(
-        "Each dot is a finding. Severity alone (left to right) says little about urgency (bottom to top); "
-        "most of the scanner's output sits low on the vertical axis. Labels show the findings discussed on this "
-        "page with their ScoreRisk rank; hover any dot for its details."
-    )
+    st.caption(t("chart_caption"))
 
 # ---------- 2. before / after ----------
 def rejudge_records_for(path):
@@ -545,26 +505,23 @@ flipped = {r["finding_id"] for _, _, mine in rejudge_records for r in mine if r.
 
 with tab_proof:
     for record_path, record, mine in rejudge_records:
-        with st.expander("Re-judged with a later judge (a separate record, NOT part of this run)", expanded=True):
+        with st.expander(t("rejudge_title"), expanded=True):
             current = record.get("judge_fingerprint") == judge_fingerprint()
+            environment = record["sandbox_environment"]
             st.markdown(
-                f"`{record_path.name}` · judge `{record.get('judge_fingerprint')}` "
-                f"({'matches the current judge' if current else 'made with an older judge version than the current one'}) · "
-                f"sandbox: Python {record['sandbox_environment'].get('python')}, "
-                f"Flask {record['sandbox_environment'].get('flask')}, "
-                f"pytest {record['sandbox_environment'].get('pytest')}.  \n"
-                "The patch stored in this run was rebuilt from its diff, applied to the current vulnerable app and "
-                "judged again in the sandbox. This run itself was not modified, and nothing was exported."
+                t("rejudge_body", name=record_path.name, fp=record.get("judge_fingerprint"),
+                  matches=t("rejudge_matches") if current else t("rejudge_older"), py=environment.get("python"),
+                  fl=environment.get("flask"), pt=environment.get("pytest"))
             )
             st.table(
                 pd.DataFrame(
                     [
                         {
-                            "Finding": r["finding_id"],
-                            "Judge in this run": "accepted" if r["original"]["accepted"] else "rejected",
-                            "Later judge": "accepted" if r["rejudged"].get("accepted") else "REJECTED",
-                            "Changed": "yes" if r.get("verdict_changed") else "no",
-                            "Diff rebuilt exactly": "yes" if r.get("diff_roundtrip_ok") else "NO",
+                            t("col_finding"): r["finding_id"],
+                            t("rj_col_judge"): t("accepted") if r["original"]["accepted"] else t("rejected"),
+                            t("rj_col_later"): t("accepted") if r["rejudged"].get("accepted") else t("rejected_upper"),
+                            t("rj_col_changed"): t("yes") if r.get("verdict_changed") else t("no"),
+                            t("rj_col_diff"): t("yes") if r.get("diff_roundtrip_ok") else t("no_upper"),
                         }
                         for r in mine
                     ]
@@ -572,28 +529,24 @@ with tab_proof:
             )
             for r in mine:
                 if r.get("verdict_changed"):
-                    st.markdown(f"**{r['finding_id']}**: output of the later judge ({r['rejudged']['poc']}):")
+                    st.markdown(t("rejudge_output", fid=r["finding_id"], poc=r["rejudged"]["poc"]))
                     st.code(r["rejudged"]["poc_output"], language="text", wrap_lines=True)
     if not run or not run["patches"]:
-        st.info("No patched findings in this run.")
+        st.info(t("no_patched"))
     for fid, patch in (run or {"patches": {}})["patches"].items():
         finding = by_id.get(fid, {"title": fid})
         accepted = patch.get("accepted")
         st.subheader(f"{fid}: {finding['title']}")
-        approval = str(patch.get("approval") or "not recorded")
+        approval = str(patch.get("approval") or t("not_recorded"))
         # export_status decides when the record has it; exported=false alone is never read as a refusal.
-        _, export_state = describe_export(patch)
         recorded_status = f" · export_status: {patch['export_status']}" if patch.get("export_status") else ""
         st.markdown(
-            f"**Judge: {'patch accepted (red to green)' if accepted else 'patch not accepted'}** · "
-            f"{export_state}  \n_approval field: {approval}{recorded_status}_"
+            t("judge_line", verdict=t("verdict_accepted") if accepted else t("verdict_not_accepted"),
+              export=export_text(patch, lang), field=t("approval_field"), approval=approval, status=recorded_status)
         )
         for earlier in patch.get("attempt_history", []):
-            with st.expander(f"Attempt {earlier['attempt']} was rejected by the judge, then Nemotron repaired it"):
-                st.markdown(
-                    "Same exploit, same tests. The judge's output was handed back to the model, "
-                    "which wrote the next attempt."
-                )
+            with st.expander(t("attempt_rejected", n=earlier["attempt"])):
+                st.markdown(t("attempt_body"))
                 st.code(
                     (earlier.get("poc_output") or "") + "\n\ntests: "
                     + ((earlier.get("tests_output") or "").strip().splitlines() or ["n/a"])[-1],
@@ -602,24 +555,21 @@ with tab_proof:
                 )
                 st.code(earlier["diff"], language="diff")
         if fid in flipped:
-            st.warning(
-                "A later, stricter judge REJECTS this patch (see the re-judge record at the top of this tab). "
-                "The 'SAFE' output below is what the judge of this run saw."
-            )
+            st.warning(t("flipped_warning"))
         before, after = st.columns(2)
-        before.markdown("**Before: the exploit runs on the vulnerable app (sandbox)**")
+        before.markdown(t("before_h"))
         before.code(run["verdicts"][fid]["evidence"], language="text", wrap_lines=True)
-        after.markdown("**After: the same exploit and the functional tests on the patched app**")
+        after.markdown(t("after_h"))
         after.code(
             (patch.get("poc_output") or "") + "\n\ntests: "
             + ((patch.get("tests_output") or "").splitlines() or ["n/a"])[-1],
             language="text",
             wrap_lines=True,
         )
-        with st.expander("Patch written by Nemotron (diff)"):
+        with st.expander(t("patch_expander")):
             st.code(patch["diff"], language="diff")
         st.download_button(
-            "Download this patch (.diff)",
+            t("download"),
             data=patch["diff"],
             file_name=f"{by_id.get(fid, {}).get('cwe') or fid}.diff".replace(":", "_"),
             mime="text/plain",
@@ -628,86 +578,50 @@ with tab_proof:
 
 # ---------- 2b. public evidence (Tavily) ----------
 with tab_evidence:
-    st.markdown(
-        "What execution cannot verify (no PoC for that class) is backed with **public evidence**: "
-        "Tavily searches the web at runtime and Nemotron summarizes only what the sources support. "
-        "This never changes the ScoreRisk number. Web results and summaries can differ between runs, "
-        "which is exactly why this evidence is shown next to the score and never inside it."
-    )
+    st.markdown(t("evidence_intro"))
+    if t("evidence_recorded_note"):
+        st.caption(t("evidence_recorded_note"))
     enrichment = (run or {}).get("enrichment") or {}
     if not enrichment:
-        st.info("This run has no public-evidence step. Set TAVILY_API_KEY and run `python megapatch.py`.")
+        st.info(t("no_enrichment"))
     for fid, info in enrichment.items():
         finding = by_id.get(fid, {"title": fid})
         st.subheader(f"{fid}: {finding['title']}")
         if "skipped" in info or "error" in info:
-            st.warning(f"Skipped: {info.get('skipped') or info.get('error')}")
+            st.warning(t("skipped", why=info.get("skipped") or info.get("error")))
             continue
         assessment = info.get("assessment")
         if assessment:
-            shown = {"yes": "yes", "no": "no", "unclear": "not stated in sources"}
+            shown = {"yes": t("yes"), "no": t("no"), "unclear": t("ev_unclear")}
             c1, c2, c3 = st.columns(3)
-            c1.metric("Exploited in the wild", shown[assessment["exploited_in_the_wild"]])
-            c2.metric("Public exploit code", shown[assessment["public_exploit_code"]])
-            c3.metric("Vendor fix available", shown[assessment["vendor_fix_available"]])
+            c1.metric(t("ev_exploited"), shown[assessment["exploited_in_the_wild"]])
+            c2.metric(t("ev_public_code"), shown[assessment["public_exploit_code"]])
+            c3.metric(t("ev_vendor_fix"), shown[assessment["vendor_fix_available"]])
             st.markdown(assessment["summary"])
         else:
-            st.write("No public sources found.")
+            st.write(t("no_sources"))
         for i, source in enumerate(info.get("sources", []), 1):
             st.markdown(f"[{i}] [{source['title'] or source['url']}]({source['url']})")
-        st.caption(f"Query: {info['query']}")
+        st.caption(t("query", q=info["query"]))
 
 # ---------- 3. why ----------
 with tab_why:
-    st.markdown(
-        """
-**ScoreRisk is a rule, not a model.** `100 x (0.50 E + 0.30 X + 0.20 S)`
-
-| Signal | Weight | Source | Question it answers |
-|---|---|---|---|
-| E, exploitability | 50% | EPSS, CISA KEV (floor 0.90 when listed) | Can someone exploit it today? |
-| X, exposure | 30% | Asset context: internet, authentication, production, sensitive data | If exploited, how reachable and how bad? |
-| S, severity | 20% | CVSS base score | How bad is the bug in itself? |
-
-CVSS weighs little on purpose: over-weighting it is exactly what creates the noise.
-The same input always produces the same ranking, so the number is auditable.
-"""
-    )
-    st.markdown(
-        f"""
-**Action bands** (names borrowed from CISA's SSVC: Act, Attend, Track\\*, Track). This is a **simplified,
-project-specific rule table, not CISA's decision tree**:
-
-| Band | Rule | Meaning |
-|---|---|---|
-| Act | Exploit confirmed in the sandbox, or in KEV and internet-facing | Handle first |
-| Attend | In KEV but internal, or EPSS at or above {EPSS_ATTEND:.2f} | Handle sooner than the normal cycle |
-| Track\\* | Internet-facing with no exploitation evidence | Watch closely |
-| Track | No strong signal | Normal patch cycle |
-
-The EPSS threshold ({EPSS_ATTEND:.2f}) is a project parameter, not an SSVC value. A band is only as
-reliable as its inputs, and asset exposure is declared in a fictional practice inventory.
-"""
-    )
-    st.markdown(
-        f"**Data snapshot:** fetched {threat['fetched_at'][:10]}, CISA KEV catalog "
-        f"{threat['sources']['kev_catalog_version']} ({threat['sources']['kev_total']} entries). "
-        "The findings are real scanner output (pip-audit over deliberately outdated pinned packages, "
-        "Bandit over our practice app) and the CVE, EPSS, KEV and CVSS values are real. Which asset each "
-        "finding belongs to and how exposed it is are declared assumptions of a fictional project, and the "
-        "weights are starting points, not validated values."
-    )
+    st.markdown(t("why_score"))
+    st.markdown(t("why_bands", epss=f"{EPSS_ATTEND:.2f}"))
+    st.markdown(t("why_snapshot", fetched=threat["fetched_at"][:10], version=threat["sources"]["kev_catalog_version"],
+                  total=threat["sources"]["kev_total"]))
     if sensitivity:
-        st.markdown(f"**Robustness check:** {sensitivity['configurations_tested']} weight/constant combinations")
+        st.markdown(t("sens_title", n=sensitivity["configurations_tested"]))
         shown = {k: v for k, v in sensitivity.items() if isinstance(v, float)}
-        st.table(pd.DataFrame({"Conclusion": list(shown), "Holds in": [f"{v:.0%}" for v in shown.values()]}))
-        st.caption("This varies the weights, not the inputs: the exposure of each asset is still an assumption.")
+        st.table(pd.DataFrame({t("sens_col_conclusion"): [data_label(k, lang) for k in shown],
+                               t("sens_col_holds"): [f"{v:.0%}" for v in shown.values()]}))
+        st.caption(t("sens_caption"))
 
 # ---------- 4. reproduce ----------
 with tab_repro:
     st.markdown(
-        """
-Verify the red to green claim yourself, with no API keys (the network is only needed to install the packages):
+        f"""
+{t("repro_intro")}
 
 ```bash
 git clone https://github.com/oryamx/megapatch
@@ -716,43 +630,39 @@ pip install -r requirements.txt
 python judge_check.py
 ```
 
-Run the whole pipeline (needs Nebius Token Factory credentials and Sandboxes access):
+{t("repro_full")}
 
 ```bash
 python megapatch.py
 ```
 
-**Runtime services:** NVIDIA Nemotron 3 Super through Nebius Token Factory writes the patches;
-Nebius Token Factory Sandboxes run every exploit, test and model-written patch in isolation.
-Live execution is not exposed in this public page, to protect the credits behind it.
+{t("repro_services")}
 """
     )
     isolation_path = EVIDENCE / "isolation_check.json"
     if isolation_path.exists():
         isolation = json.loads(isolation_path.read_text(encoding="utf-8"))
-        with st.expander("What the sandbox can see (observed, not promised)"):
-            st.caption(
-                f"Recorded {isolation['checked_at'][:10]} by `isolation_check.py`, inside the same sandbox the judge uses. "
-                "Network egress is not blocked and code runs as root inside the VM; "
-                "isolation here means nothing sensitive is placed in it."
-            )
+        with st.expander(t("isolation_title")):
+            st.caption(t("isolation_caption", date=isolation["checked_at"][:10]))
             for name, output in isolation["results"].items():
-                st.markdown(f"**{name}**")
-                st.code(output or "(empty)", language="text", wrap_lines=True)
+                st.markdown(f"**{data_label(name, lang)}**")
+                st.code(output or t("empty"), language="text", wrap_lines=True)
 
 
 # ---------- 6. interactive analysis (local opt-in) ----------
-def _stage_lines(stages):
-    """One line per stage: status, label, detail, duration. Rendered while the analysis runs."""
-    marks = {"running": "running", "done": "done", "failed": "FAILED", "pending": "waiting for you"}
+def _stage_lines(stages, poc):
+    """One line per stage: status, label, detail, duration. Rendered while the analysis runs.
+    Labels follow the interface language; the engine's details are recorded results and stay as they are."""
+    marks = {"running": t("stage_running"), "done": t("stage_done"), "failed": t("stage_failed"),
+             "pending": t("stage_pending")}
     lines = []
     for s in stages:
         took = ""
         if s.get("finished_at") and s.get("started_at"):
             took = f" ({s['finished_at'] - s['started_at']:.1f} s)"
         detail = f" - {s['detail']}" if s.get("detail") else ""
-        lines.append(f"- **{marks.get(s['status'], s['status'])}** {s['label']}{detail}{took}")
-    return "\n".join(lines) or "starting..."
+        lines.append(f"- **{marks.get(s['status'], s['status'])}** {stage_label(s, poc, lang)}{detail}{took}")
+    return "\n".join(lines) or t("live_starting")
 
 
 def _decide(approve, ia_module, finding):
@@ -774,13 +684,17 @@ def _decide(approve, ia_module, finding):
 def render_interactive(ia_module):
     rows = [r for r in ranked if r.get("cwe") in CLASSES]
     labels = {r["id"]: f"{r['title']}  [{r['id']}]" for r in rows}
-    choice = st.selectbox("Finding to analyze", list(labels), format_func=labels.get, key="ia_choice")
+    ids = list(labels)
+    choice = st.selectbox(t("live_select"), ids, index=remembered_index(ids, "ia_selected"), format_func=labels.get,
+                          key=f"ia_choice_{lang}")
+    st.session_state["ia_selected"] = choice
     finding = next(r for r in rows if r["id"] == choice)
-    st.caption(f"Judge version used for this analysis: `{judge_fingerprint()}`")
+    poc = CLASSES[finding["cwe"]]["poc"]
+    st.caption(t("live_judge_version", fp=judge_fingerprint()))
 
-    if st.button("Run analysis in the sandbox", type="primary"):
+    if st.button(t("live_run"), type="primary"):
         st.session_state.pop("ia_decision", None)
-        box = st.status("Analysis in progress", expanded=True)
+        box = st.status(t("live_in_progress"), expanded=True)
         view = box.empty()
         deps = ia_module.default_dependencies()
         calls_before = len(deps.usage_lines())
@@ -788,7 +702,7 @@ def render_interactive(ia_module):
         result = ia_module.analyze(
             finding["cwe"], judge=deps.judge, generate=deps.generate, diff_of=deps.diff_of,
             read_candidate=deps.read_candidate, prepare=deps.prepare,
-            notify=lambda stages: view.markdown(_stage_lines(stages)),
+            notify=lambda stages: view.markdown(_stage_lines(stages, poc)),
         )
         new_calls = deps.usage_lines()[calls_before:]
         usage = {
@@ -799,10 +713,10 @@ def render_interactive(ia_module):
         st.session_state["ia"] = {"result": result, "finding_id": finding["id"], "model": deps.model,
                                   "usage": usage, "elapsed": time.time() - started}
         box.update(
-            label={"awaiting_approval": "Analysis finished: waiting for your decision",
-                   "rejected_by_judge": "Analysis finished: the judge did not accept the patch",
-                   "not_confirmed": "The exploit did not fire: nothing to fix",
-                   "error": "The analysis stopped with an error"}[result["state"]],
+            label={"awaiting_approval": t("live_done_awaiting"),
+                   "rejected_by_judge": t("live_done_rejected"),
+                   "not_confirmed": t("live_not_confirmed"),
+                   "error": t("live_error")}[result["state"]],
             state="error" if result["state"] == "error" else "complete",
         )
 
@@ -810,66 +724,50 @@ def render_interactive(ia_module):
     if not state or state["finding_id"] != finding["id"]:
         return
     result = state["result"]
-    st.markdown("**Progress**")
-    st.markdown(_stage_lines(result["stages"]))
+    st.markdown(t("live_progress"))
+    st.markdown(_stage_lines(result["stages"], result.get("poc", poc)))
     if result.get("error"):
         st.error(result["error"])
 
     if result["before"] is not None:
         left, right = st.columns(2)
-        left.markdown(f"**Before:** `{result['poc']}` on the vulnerable app (exit {result['before']['poc_exit']})")
+        left.markdown(t("live_before", poc=result["poc"], code=result["before"]["poc_exit"]))
         left.code(result["before"]["poc_output"], language="text", wrap_lines=True)
         if result["attempts"]:
             last = result["attempts"][-1]
             tail = ((last.get("tests_output") or "").strip().splitlines() or ["n/a"])[-1]
-            right.markdown(
-                f"**After:** the same `{result['poc']}` and the tests on the patched app "
-                f"(PoC exit {last['poc_exit']}, tests exit {last['tests_exit']})"
-            )
+            right.markdown(t("live_after", poc=result["poc"], pe=last["poc_exit"], te=last["tests_exit"]))
             right.code(f"{last['poc_output']}\n\ntests: {tail}", language="text", wrap_lines=True)
             st.code(last["diff"], language="diff")
 
     decision = st.session_state.get("ia_decision")
     if decision:
         if decision["exported"]:
-            st.success(f"Approved and exported: `{decision['export_path']}`. Record: `{decision['evidence_path']}`.")
+            st.success(t("live_exported", path=decision["export_path"], record=decision["evidence_path"]))
         else:
-            st.info(f"Nothing was exported. Record: `{decision['evidence_path']}`.")
+            st.info(t("live_not_exported", record=decision["evidence_path"]))
     elif result["state"] == "awaiting_approval":
-        st.warning(
-            "The judge accepted this patch, and **nothing has been exported**. Read the diff above; the export "
-            "happens only if you approve it."
-        )
+        st.warning(t("live_awaiting"))
         a, b = st.columns(2)
-        a.button("Approve export of this patch", type="primary", on_click=_decide, args=(True, ia_module, finding))
-        b.button("Reject (export nothing)", on_click=_decide, args=(False, ia_module, finding))
+        a.button(t("live_approve"), type="primary", on_click=_decide, args=(True, ia_module, finding))
+        b.button(t("live_reject"), on_click=_decide, args=(False, ia_module, finding))
     elif result["state"] in ("rejected_by_judge", "not_confirmed", "error"):
-        st.error("There is no patch to approve. Nothing was exported.")
-        st.button("Save a record of this analysis (exports nothing)", on_click=_decide,
-                  args=(False, ia_module, finding))
+        st.error(t("live_no_patch"))
+        st.button(t("live_save_record"), on_click=_decide, args=(False, ia_module, finding))
 
+
+# ---------- 7. your repository: local scan (scan_view.py) ----------
+with tab_repo:
+    scan_view.render(t, lang)
 
 with tab_live:
     import interactive as ia
 
-    st.markdown(
-        "Run the loop on **one** finding from this page: confirm it with the exploit, let Nemotron write a "
-        "patch, judge it with the **same** exploit and the tests, and decide whether to export it. "
-        "Nothing is exported until you approve."
-    )
-    st.caption(
-        "This tab is independent of the recorded run selected in the sidebar: it makes a new analysis of one finding."
-    )
-    st.caption(
-        "Read this before trusting a result: the PoCs call the app in-process (Flask's test client), not over "
-        "HTTP; the sandbox's outbound network is not blocked; and the judge only covers what its PoCs and tests "
-        "cover, so 'accepted by the judge' does not mean 'safe in production'."
-    )
+    st.subheader(t("live_title"))
+    st.markdown(t("live_intro"))
+    st.caption(t("live_independent"))
+    st.caption(t("live_trust"))
     if not ia.is_enabled():
-        st.info(
-            "**Live runs are off here.** They spend model and sandbox credits, so they are a local opt-in: set "
-            "`NEBIUS_API_KEY`, `NEBIUS_PROJECT_ID` and `MEGAPATCH_ENABLE_INTERACTIVE=1` in your own `.env` and "
-            "run `streamlit run dashboard.py` on your machine. This public page only shows recorded runs."
-        )
+        st.info(t("live_off"))
     else:
         render_interactive(ia)

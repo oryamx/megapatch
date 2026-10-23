@@ -135,8 +135,11 @@ def ask(question):
     return answer.strip().lower() == "y", time.time() - asked_at
 
 
-def patch_cycle(judge, where, cwe, evidence, auto_yes=False, generate=True, prepared=False):
+def patch_cycle(judge, where, cwe, evidence, auto_yes=False, generate=True, prepared=False, export_dir=None):
     """Generate, judge in the sandbox, repair once on rejection, ask a human to export.
+
+    An approved diff goes to `export_dir` (megapatch.py passes out/patches/<run name>/; by default a new
+    out/patches/run_<UTC time>/ folder), created exclusively, so no earlier export is ever replaced.
 
     `prepared=True` means the first candidate was already generated (in parallel).
     Returns a result dict describing the last attempt, plus the earlier ones.
@@ -194,13 +197,16 @@ def patch_cycle(judge, where, cwe, evidence, auto_yes=False, generate=True, prep
             exported = True
         else:
             exported, waited = ask(
-                "Export this patch, accepted by the judge (write the diff to out/patches/)? [y/N] "
+                "Export this patch, accepted by the judge (write the diff to a new folder under out/patches/)? [y/N] "
             )
             human_wait += waited
         if exported:
-            EXPORTS.mkdir(parents=True, exist_ok=True)
-            export_path = str(EXPORTS / f"{cwe}.diff")
-            Path(export_path).write_text(last["diff"], encoding="utf-8")
+            folder = Path(export_dir) if export_dir else EXPORTS / time.strftime("run_%Y%m%dT%H%M%SZ", time.gmtime())
+            folder.mkdir(parents=True, exist_ok=True)
+            target = folder / f"{cwe}.diff"
+            with open(target, "x", encoding="utf-8") as handle:  # a run's own folder; an earlier diff is never replaced
+                handle.write(last["diff"])
+            export_path = str(target)
             print(f"Exported {export_path}")
         else:
             print("Not exported. The judge-accepted patch stays in the evidence only.")

@@ -1,0 +1,4 @@
+# Scanners used by repo_scan.py (local scan of a Python repository). Pinned: a scan refuses to run with
+# other versions and records the versions it ran with. Not needed by the public dashboard.
+bandit==1.9.4
+pip-audit==2.10.1

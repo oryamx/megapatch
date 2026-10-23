@@ -9,7 +9,8 @@
      a neutral 0.5 when no CVSS is available.
 
 Same input files -> same output, always. No network, no model.
-Usage: python scorerisk.py        (writes evidence/ranking.json)
+Usage: python scorerisk.py          (prints the ranking; writes nothing)
+       python scorerisk.py --write  (also regenerates the demo's evidence/ranking.json)
 """
 import hashlib
 import json
@@ -83,8 +84,13 @@ def fingerprint():
 
 
 def score_all():
-    findings = build_findings()
-    threat = json.loads(THREAT.read_text(encoding="utf-8"))
+    """The demo's ranking: its frozen findings and threat-data snapshot."""
+    return score_findings(build_findings(), json.loads(THREAT.read_text(encoding="utf-8")))
+
+
+def score_findings(findings, threat):
+    """Rank any list of findings against a threat-data snapshot with the same rule and weights.
+    repo_scan.py uses it for a scanned repository; score_all() for the demo."""
     rows = []
     for f in findings:
         e, e_note = exploitability(f, threat)
@@ -111,7 +117,7 @@ def score_all():
     return ranked, threat
 
 
-def main(show=15):
+def main(show=15, write=False):
     ranked, threat = score_all()
     print(
         f"Threat data snapshot: {threat['fetched_at']} | KEV catalog {threat['sources']['kev_catalog_version']} "
@@ -125,10 +131,14 @@ def main(show=15):
             f"{r['rank']:>3} {r['id'][:33]:<34}{r['pre_score']:>6} {r['E']:>5}{r['X']:>5}{r['S']:>5} "
             f"{cvss:>5}{'(#' + str(r['cvss_rank']) + ')':>8} {epss:>6} {'YES' if r['kev'] else '-':<4}"
         )
-    OUT.parent.mkdir(exist_ok=True)
-    OUT.write_text(json.dumps(ranked, indent=2), encoding="utf-8")
-    print(f"\n(showing the top {show} of {len(ranked)}) Written {OUT}")
+    print(f"\n(showing the top {show} of {len(ranked)})")
+    if write:
+        OUT.parent.mkdir(exist_ok=True)
+        OUT.write_text(json.dumps(ranked, indent=2), encoding="utf-8")
+        print(f"Written {OUT}")
 
 
 if __name__ == "__main__":
-    main()
+    import sys
+
+    main(write="--write" in sys.argv[1:])

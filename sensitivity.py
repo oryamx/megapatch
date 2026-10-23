@@ -7,7 +7,8 @@ all of them and which depend on the choice.
 It varies the weights and constants, NOT the inputs: the exposure of each asset
 is still a declared assumption.
 
-Usage: python sensitivity.py        (writes evidence/sensitivity.json)
+Usage: python sensitivity.py          (prints the conclusions; writes nothing)
+       python sensitivity.py --write  (also regenerates the demo's evidence/sensitivity.json)
 """
 import itertools
 import json
@@ -39,7 +40,7 @@ def ranks_under(w_e, w_x, kev_floor, unknown_e, x_weights):
     return by_key, len(ranked)
 
 
-def main():
+def main(write=False):
     runs, total = [], 0
     for (e, x), kf, ue, xw in itertools.product(W_PAIRS, KEV_FLOORS, UNKNOWN_ES, X_VARIANTS.values()):
         ranks, total = ranks_under(e, x, kf, ue, xw)
@@ -67,11 +68,14 @@ def main():
         text = f"{value:.0%}" if isinstance(value, float) else str(value)
         print(f"  {text:>9}  {key}")
 
-    out = Path("evidence/sensitivity.json")
-    out.parent.mkdir(exist_ok=True)
-    out.write_text(json.dumps(results, indent=2), encoding="utf-8")
-    print(f"\nWritten {out}")
+    if write:
+        out = Path("evidence/sensitivity.json")
+        out.parent.mkdir(exist_ok=True)
+        out.write_text(json.dumps(results, indent=2), encoding="utf-8")
+        print(f"\nWritten {out}")
 
 
 if __name__ == "__main__":
-    main()
+    import sys
+
+    main(write="--write" in sys.argv[1:])
