@@ -1,4 +1,4 @@
-"""MegaPatch pipeline: rank -> verify -> patch -> re-test -> evidence.
+"""MegaPatch pipeline: rank -> verify -> patch proposal -> evidence.
 
 Usage:
   python megapatch.py                run the whole pipeline (judge in the Nebius sandbox)
@@ -6,11 +6,16 @@ Usage:
   python megapatch.py --yes          skip the human approval question
   python megapatch.py --eval-only    reuse the existing candidate patches (no model call)
   python megapatch.py --local        judge on this machine instead of the sandbox
-  python megapatch.py --no-enrich    skip the Tavily public-evidence step
+  python megapatch.py --enrich       also ask Tavily for public evidence (sends the CVE id; off by default,
+                                     a TAVILY_API_KEY alone does not turn it on)
 
 Patch generation always calls Nemotron on Nebius Token Factory.
-"The score proposes, execution disposes": ScoreRisk orders the findings, the
-sandbox PoC decides which are real, and the same PoC re-tests the fix.
+ScoreRisk orders the findings and the sandbox PoC decides which are real. In the
+recorded runs, the same PoC also re-tested the fix.
+
+For now the fix is NOT re-tested (execution_policy.py): model-written code is not run anywhere until an
+environment is proven to block outbound network, so each patch is recorded as a proposal, "not executed and
+not verified", and nothing is exported. The PoC still confirms the vulnerability on the practice app.
 """
 import argparse
 import json
@@ -21,6 +26,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 import enrich
+import execution_policy as policy
 import llm
 import run_patch_loop as loop
 from catalog import CLASSES, judge_fingerprint
@@ -60,7 +66,9 @@ def main():
     parser.add_argument("--yes", action="store_true")
     parser.add_argument("--eval-only", action="store_true")
     parser.add_argument("--local", action="store_true")
-    parser.add_argument("--no-enrich", action="store_true", help="skip the Tavily evidence step")
+    parser.add_argument("--enrich", action="store_true",
+                        help="ask Tavily for public evidence (sends the CVE id); off by default, even with a key")
+    parser.add_argument("--no-enrich", action="store_true", help=argparse.SUPPRESS)  # the default now
     parser.add_argument("--save-as", metavar="NAME", help="write the evidence to evidence/NAME.json (never overwrites recorded runs)")
     args = parser.parse_args()
 
@@ -95,12 +103,12 @@ def main():
     enrichment = {}
     to_enrich = [
         r for r in top
-        if verdicts[r["id"]]["verdict"] == "NOT_VERIFIABLE" and r["cve"] and not args.no_enrich
+        if verdicts[r["id"]]["verdict"] == "NOT_VERIFIABLE" and r["cve"] and args.enrich and not args.no_enrich
     ]
     if to_enrich:
-        print("\n=== 2b. Public evidence for what execution cannot verify (Tavily + Nemotron) ===")
+        print("\n=== 2b. Public evidence for what execution cannot verify (Tavily + Nemotron, --enrich) ===")
         with ThreadPoolExecutor(max_workers=WORKERS) as pool:
-            infos = list(pool.map(enrich.enrich_finding, to_enrich))
+            infos = list(pool.map(lambda r: enrich.enrich_finding(r, requested=True), to_enrich))
         for r, info in zip(to_enrich, infos):
             enrichment[r["id"]] = info
             if "skipped" in info or "error" in info:
@@ -113,7 +121,7 @@ def main():
                     f"{a.get('public_exploit_code', 'n/a')}"
                 )
 
-    print("\n=== 3. Patch + re-test ===")
+    print("\n=== 3. Patch proposal (not run: execution_policy.py) ===")
     confirmed_rows = [r for r in top if verdicts[r["id"]]["verdict"] == "CONFIRMED"]
     prepared = False
     if confirmed_rows and not args.eval_only:
@@ -136,6 +144,8 @@ def main():
 
     def status(finding_id):
         patch = patches.get(finding_id)
+        if patch and patch.get("executed") is False:
+            return f"CONFIRMED -> patch proposed by Nemotron, {policy.NOT_RUN}"
         if patch and patch["accepted"]:
             extra = f" (after {patch['attempts']} attempts)" if patch.get("attempts", 1) > 1 else ""
             if not patch.get("exported", True):

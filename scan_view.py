@@ -21,6 +21,7 @@ from pathlib import Path
 import pandas as pd
 import streamlit as st
 
+import propose_patch
 import repo_scan
 from scorerisk import KEV_FLOOR
 from ui_text import data_label
@@ -83,17 +84,24 @@ def scan_form(t, lang):
     with st.form("rp_scan_form"):
         path = st.text_input(t("rp_path"), placeholder=r"C:\projects\my-app")
         project = st.text_input(t("rp_project"))
-        threat = st.checkbox(t("rp_threat"), value=True)
         st.caption(t("rp_sent"))
+        # Both off unless the person ticks them: each one sends something outside this machine, said next to it.
+        audit = st.checkbox(t("rp_audit"), value=False, help=t("rp_audit_help"))
+        threat = st.checkbox(t("rp_threat"), value=False, help=t("rp_threat_help"))
         submitted = st.form_submit_button(t("rp_scan_button"), type="primary")
     if not submitted:
         return
     folder = Path(path.strip().strip('"')).name or path
+    if threat and not audit:
+        st.warning(t("rp_threat_needs_audit"))
+        threat = False
+    if audit:
+        st.warning(t("rp_asked", what=t("rp_asked_threat") if threat else t("rp_asked_audit")))
     with st.status(t("rp_running", folder=folder), expanded=True) as status:
         progress = lambda step, **info: st.write(t("rp_step_" + step, **info))  # noqa: E731
         try:
             done = repo_scan.scan(path.strip().strip('"'), project.strip() or None, threat_data=threat,
-                                  progress=progress)
+                                  audit_dependencies=audit, progress=progress)
         except repo_scan.ScanError as exc:
             status.update(label=t("rp_failed", error=_error_text(t, exc)), state="error")
             return
@@ -105,6 +113,8 @@ def scan_form(t, lang):
     st.session_state["rp_scan_memory"] = meta["id"]
     st.session_state[f"rp_project_{lang}"] = meta["project"]
     st.session_state[f"rp_scan_{lang}_{meta['project']}"] = meta["id"]
+    # The folder is kept for this browser session only (a patch proposal reads one file from it); it is not saved.
+    st.session_state.setdefault("rp_paths", {})[meta["project"]] = path.strip().strip('"')
 
 
 def _yes_no(t, value):
@@ -273,6 +283,119 @@ def explain_code(t, r):
     st.markdown(lines[0] + "\n\n" + "\n".join(f"- {line}" for line in lines[1:]))
 
 
+def _proposal_error(t, exc):
+    try:
+        return t("pp_err_" + exc.key, **exc.values)
+    except KeyError:
+        return str(exc)
+
+
+def proposal_section(t, scan, row):
+    """For one B602 finding: what would be sent, consent, the proposal, its static review and the decision.
+    Nothing is sent without the consent box, and a proposal is never shown as tested or accepted."""
+    st.markdown(f"##### {t('pp_title')}")
+    st.caption(t("pp_scope"))
+    meta = scan["meta"]
+    key = f"pp_{meta['id']}_{row['id']}"
+    path = st.text_input(t("pp_path"), value=st.session_state.get("rp_paths", {}).get(meta["project"], ""),
+                         key=key + "_path")
+    allowed = st.text_input(t("pp_allowed"), key=key + "_allowed", help=t("pp_allowed_help"))
+    if st.button(t("pp_prepare"), key=key + "_prepare"):
+        try:
+            st.session_state[key] = {"prepared": propose_patch.prepare(path.strip().strip('"'), scan, row["id"],
+                                                                       allowed=allowed),
+                                     "path": path.strip().strip('"')}
+        except (propose_patch.ProposalError, repo_scan.ScanError) as exc:
+            st.session_state[key] = {"error": _proposal_error(t, exc) if isinstance(exc, propose_patch.ProposalError)
+                                     else _error_text(t, exc)}
+    state = st.session_state.get(key)
+    if state and "error" in state:
+        st.error(state["error"])
+    elif state:
+        prepared = state["prepared"]
+        st.markdown(f"**{t('pp_sent_title')}**")
+        st.code(prepared["sent_text"], language=None, wrap_lines=True)
+        e = prepared["estimate"]
+        st.caption(t("pp_estimate", chars=len(prepared["sent_text"]), tin=e["input_tokens"], typical=e["typical_usd"],
+                     tout=e["typical_output_tokens"], max=e["max_usd"], tmax=e["max_output_tokens"]))
+        if prepared["sensitive"]:
+            st.error(t("pp_err_sensitive", kinds=", ".join(sorted({k for k, _ in prepared["sensitive"]})),
+                       lines=", ".join(str(n) for _, n in prepared["sensitive"])))
+        else:
+            key_ok = propose_patch.has_api_key()
+            if not key_ok:
+                st.warning(t("pp_no_key"))
+            consent = st.checkbox(t("pp_consent"), key=f"{key}_consent_{prepared['sent_sha256'][:12]}")
+            if st.button(t("pp_send"), key=key + "_send", type="primary", disabled=not (consent and key_ok)):
+                with st.spinner(t("pp_sending")):
+                    try:
+                        propose_patch.propose(state["path"], scan, prepared, consent=consent)
+                    except propose_patch.ProposalError as exc:
+                        st.error(_proposal_error(t, exc))
+    for record, decision in propose_patch.load_proposals(meta["project"]):
+        if record["scan_id"] == meta["id"] and record["finding_id"] == row["id"]:
+            proposal_view(t, record, decision, path.strip().strip('"'))
+    damaged = propose_patch.damaged_records(meta["project"])
+    if damaged:
+        st.warning(t("pp_damaged", files=", ".join(f"`{d}`" for d in damaged)))
+
+
+def proposal_view(t, record, decision, repo):
+    usage = record.get("usage") or {}
+    st.markdown(t("pp_proposal", id=record["id"], when=record["created_at"][:16].replace("T", " "),
+                  tokens=(usage.get("prompt_tokens") or 0) + (usage.get("completion_tokens") or 0)))
+    if record.get("review_of"):
+        st.caption(t("pp_rereview", id=record["review_of"]))
+    reviewed = record["status"] == "statically_reviewed"
+    status = {"statically_reviewed": "pp_status_reviewed", "file_changed": "pp_status_file_changed"}
+    (st.warning if reviewed else st.error)(t(status.get(record["status"], "pp_status_failed")))
+    st.code(record["diff"] or t("pp_no_diff"), language="diff")
+    st.markdown("\n".join(f"- {'✅' if c['passed'] else '❌'} {t('pp_check_' + c['check'])}: {c['detail']}"
+                          for c in record["checks"]))
+    if record.get("observations"):
+        st.markdown(f"**{t('pp_observations')}**\n\n" + "\n".join(f"- {note}" for note in record["observations"]))
+    project = record["project"]
+    if decision:
+        when = decision["decided_at"][:16].replace("T", " ")
+        state = propose_patch.export_state(project, record["id"], decision, record=record, repo=repo)
+        if decision["decision"] != "approved":
+            st.info(t("pp_rejected", when=when))
+        elif state == "exported":  # the only finished approval: the diff is in place with the approved text
+            st.info(t("pp_approved", when=when, project=project, path=decision["export_target"]))
+        elif state == "conflict":
+            st.error(t("pp_export_conflict", when=when, project=project, path=decision["export_target"]))
+        elif state == "stale":  # terminal: nothing to retry, the diff is never exported
+            st.error(t("pp_export_stale", when=when, file=record["file"]))
+        else:
+            st.warning(t("pp_export_pending", when=when, project=project, path=decision["export_target"]))
+            ready = propose_patch.source_version(record, repo) == "same"  # otherwise a retry could only fail
+            if not ready:
+                st.caption(t("pp_retry_needs_folder", file=record["file"]))
+            if st.button(t("pp_retry_export"), key=f"pp_retry_{record['id']}", disabled=not ready):
+                try:
+                    propose_patch.retry_export(project, record["id"], repo)
+                except propose_patch.ProposalError as exc:
+                    st.error(_proposal_error(t, exc))
+                else:
+                    st.rerun()
+        return
+    left, right = st.columns(2)
+    if reviewed and left.button(t("pp_approve"), key=f"pp_approve_{record['id']}", type="primary"):
+        try:
+            propose_patch.decide(project, record["id"], True, repo=repo)
+        except propose_patch.ProposalError as exc:
+            st.error(_proposal_error(t, exc))
+        else:
+            st.rerun()
+    if right.button(t("pp_reject"), key=f"pp_reject_{record['id']}"):
+        try:
+            propose_patch.decide(project, record["id"], False)
+        except propose_patch.ProposalError as exc:
+            st.error(_proposal_error(t, exc))
+        else:
+            st.rerun()
+
+
 def results(t, lang, scan, exposure):
     meta = scan["meta"]
     ranked = repo_scan.rank_scan(scan, exposure)
@@ -302,6 +425,8 @@ def results(t, lang, scan, exposure):
     st.markdown(f"##### {t('rp_deps_title', n=c['dependencies'])}")
     if ranked["dependencies"]:
         dependency_table(t, ranked)
+    elif meta["pinned"] and not meta.get("dependency_audit", {"ran": True})["ran"]:  # earlier scans always ran it
+        st.info(t("rp_deps_not_checked", n=len(meta["pinned"])))
     elif meta["pinned"]:
         st.success(t("rp_deps_none", n=len(meta["pinned"])))
     else:
@@ -326,6 +451,8 @@ def results(t, lang, scan, exposure):
 
         kind, rank = _choice(t, t("rp_detail"), options, "rp_detail_memory", f"rp_detail_{lang}_{meta['id']}", label)
         (explain_dependency if kind == "d" else explain_code)(t, (deps if kind == "d" else code)[rank - 1])
+        if kind == "c" and code[rank - 1]["test_id"] == propose_patch.TEST_ID:
+            proposal_section(t, scan, code[rank - 1])
 
     not_audited = meta["not_audited"]
     if not_audited:
@@ -347,7 +474,7 @@ def results(t, lang, scan, exposure):
         st.caption(t("rp_not_parsed", n=len(meta["bandit"]["files_not_parsed"]),
                      files=", ".join(f"`{f['file']}`" for f in meta["bandit"]["files_not_parsed"])))
     with st.expander(t("rp_external_title")):
-        lines = [t("rp_ext_" + e["service"], n=e["count"]) for e in meta["external"]]
+        lines = [t("rp_ext_" + e["service"], n=e["count"]) for e in meta["external"]] or [t("rp_ext_nothing")]
         st.markdown("\n".join(f"- {line}" for line in lines + [t("rp_ext_bandit"), t("rp_ext_none")]))
     st.caption(t("rp_not_done"))
 

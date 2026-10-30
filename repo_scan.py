@@ -3,18 +3,22 @@
   streamlit run dashboard.py --server.address 127.0.0.1 -- --local-scan
       the dashboard (tab "Your repository (local)"): choose the folder, declare the exposure and read the
       results. 127.0.0.1 only limits incoming connections; the scan still makes the outgoing requests below.
-  python repo_scan.py PATH/TO/REPO [--project NAME] [--requirements FILE ...] [--no-threat-data]
+  python repo_scan.py PATH/TO/REPO [--project NAME] [--requirements FILE ...] [--audit-dependencies] [--threat-data]
   python repo_scan.py --show PROJECT [--scan SCAN_ID]
   python repo_scan.py --declare PROJECT internet_facing=yes requires_auth=unknown environment=production ...
 
-Scanners, pinned in requirements-scan.txt (a scan refuses to run with other versions):
+By default nothing leaves this machine, and nothing from the repository is run (not even git: the commit is read
+from the .git files, because a repository's own git configuration can make git run commands):
+  - Bandit parses the repository's .py files without importing or running them. No network.
+  - Each pinned requirement line is listed as "not audited": checking it needs PyPI.
+Only when asked for explicitly (--audit-dependencies / --threat-data, or the two boxes in the dashboard):
   - pip-audit reads the lines of the repository's requirements files pinned with `==`, copied into the scan
     folder (--no-deps --disable-pip: nothing is resolved or installed). It asks PyPI's JSON API about each
     pinned name and version (vulnerability service "pypi", which publishes the PyPA/OSV advisories).
-  - Bandit parses the repository's .py files without importing or running them. No network.
-Threat data for the CVEs found (skipped with --no-threat-data): CISA KEV (the whole catalog is downloaded), FIRST
-EPSS (the CVE ids are sent) and NVD (one CVE id per request). Nothing else leaves the machine: no source code
-and no file names, and nothing is sent to Streamlit, Nebius, Tavily or a model.
+  - Threat data for the CVEs pip-audit found: CISA KEV (the whole catalog is downloaded), FIRST EPSS (the CVE ids
+    are sent) and NVD (one CVE id per request). Nothing is downloaded when there is no CVE.
+Never sent: source code or file names; nothing goes to Streamlit, Nebius, Tavily or a model. The scanners are
+pinned in requirements-scan.txt (a scan refuses other versions; pip-audit is checked only when it is used).
 
 Excluded (from Bandit too): version-control folders (.git ...), every file and folder whose name starts with
 .env (.env, .env.local, .env.py ...), every virtual environment (.venv, venv, or any folder with a pyvenv.cfg),
@@ -148,9 +152,11 @@ def installed_scanners():
     return found
 
 
-def check_scanners(installed):
+def check_scanners(installed, names=None):
+    """The pinned versions of the scanners in `names` (default: all of them) are the installed ones."""
     wrong = [f"{name} {installed.get(name) or 'not installed'}, needs {version}"
-             for name, version in pinned_scanners().items() if installed.get(name) != version]
+             for name, version in pinned_scanners().items()
+             if (names is None or name in names) and installed.get(name) != version]
     if wrong:
         raise ScanError("scanners", wrong="; ".join(wrong))
 
@@ -371,6 +377,27 @@ def no_threat_data():
     return {"fetched_at": None, "downloaded": False, "sources": {}, "kev": {}, "epss": {}, "cvss": {}, "cwe": {}}
 
 
+def read_commit(repo):
+    """The short id of the commit checked out, read from the .git files. git itself is not run: a repository's
+    own configuration (core.fsmonitor, for one) can make git run commands. None when it cannot be read this way
+    (no .git folder, a worktree, a branch without commits)."""
+    git = Path(repo) / ".git"
+    try:
+        head = (git / "HEAD").read_text(encoding="utf-8").strip()
+        if head.startswith("ref: "):
+            ref = head[5:].strip()
+            if not re.fullmatch(r"refs/[A-Za-z0-9._/-]+", ref) or ".." in ref:
+                return None
+            if (git / ref).is_file():
+                head = (git / ref).read_text(encoding="utf-8").strip()
+            else:
+                packed = (git / "packed-refs").read_text(encoding="utf-8") if (git / "packed-refs").is_file() else ""
+                head = next((ln.split()[0] for ln in packed.splitlines() if ln.split()[-1:] == [ref]), "")
+    except OSError:
+        return None
+    return head[:7] if re.fullmatch(r"[0-9a-f]{40}|[0-9a-f]{64}", head) else None
+
+
 def print_step(step, **info):
     texts = {
         "survey": "Listing the folder (exclusions; size and time of every file) ...",
@@ -386,9 +413,11 @@ def print_step(step, **info):
     print(texts[step].format(**info))
 
 
-def scan(repo, project=None, requirements=None, threat_data=True, *, runner=subprocess.run, fetch=None, root=None,
-         progress=None, installed=None):
-    """Scan `repo` read-only into a new folder analysis/PROJECT/scans/SCAN_ID/ and return the loaded scan."""
+def scan(repo, project=None, requirements=None, threat_data=False, *, audit_dependencies=False, runner=subprocess.run,
+         fetch=None, root=None, progress=None, installed=None):
+    """Scan `repo` read-only into a new folder analysis/PROJECT/scans/SCAN_ID/ and return the loaded scan.
+    Local only by default. `audit_dependencies` asks PyPI about the pinned packages (pip-audit); `threat_data`
+    downloads KEV, EPSS and NVD data for the CVEs pip-audit found. Both must be asked for explicitly."""
     root = Path(root or ANALYSIS_ROOT).resolve()
     say = progress or print_step
     if not str(repo or "").strip() or not Path(repo).expanduser().is_dir():
@@ -399,7 +428,7 @@ def scan(repo, project=None, requirements=None, threat_data=True, *, runner=subp
     if repo.is_relative_to(root):
         raise ScanError("inside_analysis", repo=str(repo))
     versions = installed_scanners() if installed is None else installed
-    check_scanners(versions)
+    check_scanners(versions, None if audit_dependencies else {"bandit"})
     project = project or project_name_for(repo)
     base = project_dir(project, root)
 
@@ -424,17 +453,23 @@ def scan(repo, project=None, requirements=None, threat_data=True, *, runner=subp
     pinned, conflicts = merge_pins([p[0] for p in parsed])
     not_audited = [s for p in parsed for s in p[1]] + conflicts
     read = [name for p in parsed for name in p[2]]
-    say("pip_audit", n=len(pinned))
-    audit = run_pip_audit(runner, folder, pinned)
-    not_audited += [{"file": None, "line": None, "text": d["name"], "reason": f"pip-audit: {d['skip_reason']}"}
-                    for d in audit.get("dependencies", []) if d.get("skip_reason")]
+    if audit_dependencies:
+        say("pip_audit", n=len(pinned))
+        audit = run_pip_audit(runner, folder, pinned)
+        not_audited += [{"file": None, "line": None, "text": d["name"], "reason": f"pip-audit: {d['skip_reason']}"}
+                        for d in audit.get("dependencies", []) if d.get("skip_reason")]
+    else:  # offline: what only PyPI could tell is listed, not guessed
+        audit = {"dependencies": [], "fixes": []}
+        not_audited += [{"file": p["file"], "line": p["line"], "text": f"{p['name']}=={p['version']}",
+                         "reason": "dependency check off (it asks PyPI; not requested)"} for p in pinned]
     say("bandit")
     report = run_bandit(runner, folder, repo, excluded)
     findings = build_findings(audit, report, pinned, repo)
     (folder / "findings.json").write_text(json.dumps(findings, indent=2), encoding="utf-8")
 
     cves = sorted({f["cve"] for f in findings["dependencies"] if f["cve"]})
-    if not threat_data:
+    downloaded = bool(threat_data and cves)  # nothing to look up, nothing downloaded
+    if not downloaded:
         (folder / "threat_data.json").write_text(json.dumps(no_threat_data(), indent=2), encoding="utf-8")
     else:
         if fetch is None:
@@ -444,20 +479,17 @@ def scan(repo, project=None, requirements=None, threat_data=True, *, runner=subp
               with_cwe=True)
     threat = json.loads((folder / "threat_data.json").read_text(encoding="utf-8"))
 
-    commit = None
-    if (repo / ".git").exists():
-        proc = subprocess.run(["git", "-C", str(repo), "rev-parse", "--short", "HEAD"], capture_output=True, text=True)
-        commit = proc.stdout.strip() or None
+    commit = read_commit(repo)
     say("verify")
     after, _ = survey(repo)
     changed = sorted(k for k in before.keys() | after.keys() if before.get(k) != after.get(k))
     analyzed = [f for f in report.get("metrics", {}) if f != "_totals"]
     was_left_out = lambda f: any(f.startswith(e["path"]) if e["path"].endswith("/") else f == e["path"]  # noqa: E731
                                  for e in excluded)
-    external = [{"service": "pypi", "count": len(pinned)}] if pinned else []
-    if threat_data:
-        external += [{"service": "kev", "count": 0}] + ([{"service": "epss", "count": len(cves)},
-                                                         {"service": "nvd", "count": len(cves)}] if cves else [])
+    external = [{"service": "pypi", "count": len(pinned)}] if audit_dependencies and pinned else []
+    if downloaded:
+        external += [{"service": "kev", "count": 0}, {"service": "epss", "count": len(cves)},
+                     {"service": "nvd", "count": len(cves)}]
     meta = {
         "id": scan_id, "project": project, "folder_name": repo.name, "commit": commit,
         "scanned_at": started, "finished_at": now(), "scanners": versions,
@@ -468,7 +500,8 @@ def scan(repo, project=None, requirements=None, threat_data=True, *, runner=subp
                    "excluded_files_analyzed": sorted(a for a in analyzed if was_left_out(a)),
                    "files_not_parsed": [{"file": e.get("filename"), "reason": e.get("reason")}
                                         for e in report.get("errors", [])]},
-        "threat_data": {"downloaded": bool(threat_data), "fetched_at": threat.get("fetched_at"),
+        "dependency_audit": {"ran": bool(audit_dependencies), "service": "pypi" if audit_dependencies else None},
+        "threat_data": {"downloaded": downloaded, "fetched_at": threat.get("fetched_at"),
                         "kev_catalog_version": (threat.get("sources") or {}).get("kev_catalog_version")},
         "external": external,
         "repository_check": {"files_compared": len(before), "unchanged": not changed, "changed": changed[:20]},
@@ -615,7 +648,9 @@ def show(scan, ranked, top=20):
     print(f"\nProject {meta['project']}, scan {meta['id']} of {meta['folder_name']}"
           + (f" (commit {meta['commit']})" if meta["commit"] else ""))
     print(f"Scanners: {', '.join(f'{k} {v}' for k, v in meta['scanners'].items())}; threat data: "
-          + (meta["threat_data"]["fetched_at"] if meta["threat_data"]["downloaded"] else "not downloaded (--no-threat-data)"))
+          + (meta["threat_data"]["fetched_at"] if meta["threat_data"]["downloaded"] else "not downloaded")
+          + ("" if meta.get("dependency_audit", {"ran": True})["ran"] else
+             "; dependencies: not audited (no --audit-dependencies)"))
     print(f"Folder unchanged: {'yes' if check['unchanged'] else 'NO: ' + ', '.join(check['changed'])} "
           f"({check['files_compared']} files compared)")
     print("Excluded: " + (", ".join(f"{e['path']} ({e['reason']})" for e in meta["excluded"]) or "nothing"))
@@ -655,8 +690,13 @@ def main(argv=None):
     parser.add_argument("--project", help="project name (default: the folder name)")
     parser.add_argument("--requirements", action="append", default=[],
                         help="requirements file, relative to the repository (repeatable; default requirements*.txt)")
-    parser.add_argument("--no-threat-data", action="store_true",
-                        help="do not download KEV, EPSS and CVSS (pip-audit still asks PyPI)")
+    parser.add_argument("--audit-dependencies", action="store_true",
+                        help="ask PyPI about each pinned package (pip-audit sends its name and version); "
+                             "off by default")
+    parser.add_argument("--threat-data", action="store_true",
+                        help="with --audit-dependencies: download CISA KEV, FIRST EPSS and NVD data for the CVEs found "
+                             "(the CVE ids are sent); off by default")
+    parser.add_argument("--no-threat-data", action="store_true", help=argparse.SUPPRESS)  # the default now
     parser.add_argument("--show", metavar="PROJECT", help="print the queues of a project's latest scan")
     parser.add_argument("--scan", help="with --show: a specific scan id")
     parser.add_argument("--declare", nargs="+", metavar="ARG", help="PROJECT FIELD=VALUE ...: a new exposure declaration")
@@ -675,7 +715,18 @@ def main(argv=None):
         else:
             if not args.repo:
                 parser.error("give the repository folder, or --show PROJECT")
-            loaded = scan(args.repo, args.project, args.requirements, threat_data=not args.no_threat_data)
+            threat = args.threat_data and not args.no_threat_data
+            if args.threat_data and not args.audit_dependencies:
+                parser.error("--threat-data looks up the CVEs pip-audit finds: add --audit-dependencies too")
+            print("Local scan: Bandit reads the files here; nothing from the repository is run.")
+            if args.audit_dependencies:
+                print("Asked for: pip-audit sends the name and version of each pinned package to PyPI's JSON API.")
+            if threat:
+                print("Asked for: the CISA KEV catalog is downloaded and the CVE ids found go to FIRST EPSS and NVD.")
+            if not args.audit_dependencies:
+                print("Not asked for: no dependency check (pinned lines are listed as not audited), no threat data.")
+            loaded = scan(args.repo, args.project, args.requirements, threat_data=threat,
+                          audit_dependencies=args.audit_dependencies)
             print(f"\nSaved {loaded['folder']}")
         show(loaded, rank_scan(loaded, latest_exposure(loaded["meta"]["project"])), args.top)
     except ScanError as exc:

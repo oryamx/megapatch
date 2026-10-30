@@ -4,15 +4,25 @@ It exercises the rules of the interactive mode with fake judge/model functions:
   progress is visible, the SAME PoC is used before and after, and nothing is exported
   until a person approves a judge-accepted patch.
 
+Those judges are scripted: they return canned results and run nothing, so for them the rule that model-written
+code is never run (execution_policy.py) is lifted while they answer (scripted_judges). By default it holds: the
+analysis stops at a proposal, "not executed and not verified", that cannot be approved or exported (checked too).
+Any attempt to reach another host fails at once (no_network).
+
 Usage: python check_interactive.py   (judge_check.py runs it too)
 """
+import contextlib
 import json
+import os
+import shutil
 import subprocess
 import sys
 import tempfile
 from pathlib import Path
 
+import execution_policy as policy
 import interactive as ia
+import no_network
 from catalog import CLASSES
 
 HERE = Path(__file__).resolve().parent
@@ -40,6 +50,17 @@ SAFE_OK = (0, "SAFE: blocked", 0, "6 passed in 0.2s")
 STILL_VULN = (1, "VULNERABLE: still leaks", 0, "6 passed in 0.2s")
 
 
+@contextlib.contextmanager
+def scripted_judges():
+    """For a FakeJudge only (canned answers, nothing runs): lift execution_policy while the engine is exercised."""
+    real = policy.CANDIDATES_MAY_RUN
+    policy.CANDIDATES_MAY_RUN = True
+    try:
+        yield
+    finally:
+        policy.CANDIDATES_MAY_RUN = real
+
+
 def run(judge, generate=None, cwe="CWE-22", prepare=None, now=None, session_id=None):
     events, gen_calls = [], []
 
@@ -47,13 +68,14 @@ def run(judge, generate=None, cwe="CWE-22", prepare=None, now=None, session_id=N
         gen_calls.append({"cwe": c, "evidence": evidence, "feedback": feedback})
 
     extra = {} if now is None else {"now": now}
-    result = ia.analyze(
-        cwe, judge=judge, generate=generate or default_generate,
-        diff_of=lambda c: f"--- target_app/app.py\n+++ candidates/{c}/app.py\n@@\n-old\n+new\n",
-        read_candidate=lambda c: "previous candidate source",
-        prepare=prepare, notify=lambda stages: events.append([dict(s) for s in stages]),
-        session_id=session_id, **extra,
-    )
+    with scripted_judges():
+        result = ia.analyze(
+            cwe, judge=judge, generate=generate or default_generate,
+            diff_of=lambda c: f"--- target_app/app.py\n+++ candidates/{c}/app.py\n@@\n-old\n+new\n",
+            read_candidate=lambda c: "previous candidate source",
+            prepare=prepare, notify=lambda stages: events.append([dict(s) for s in stages]),
+            session_id=session_id, **extra,
+        )
     return result, events, gen_calls
 
 
@@ -111,6 +133,50 @@ os._exit(0)
 """
 
 
+# The dashboard's Analyze (local) tab, headless, from a temporary copy of the project. The tab is switched on with
+# placeholder values (not credentials), and every dependency is simulated: a scripted judge that answers for the
+# practice app only, a fake model that writes nothing and calls nothing. No request, no sandbox, no network.
+LIVE_VIEW_CHILD = r"""
+import json, os, sys
+from pathlib import Path
+import no_network
+no_network.install()
+from types import SimpleNamespace
+import check_interactive as ci
+import interactive as ia
+from streamlit.testing.v1 import AppTest
+
+judge = ci.FakeJudge(ci.VULNERABLE)  # one answer: a call on the candidate would find none left
+generated = []
+ia.default_dependencies = lambda: SimpleNamespace(
+    judge=judge, generate=lambda cwe, evidence, feedback=None: generated.append(cwe),
+    diff_of=lambda cwe: f"--- target_app/app.py\n+++ candidates/{cwe}/app.py\n@@\n-vulnerable line\n+proposed line\n",
+    read_candidate=lambda cwe: "candidate source (never run)", prepare=None, usage_lines=lambda: [],
+    model="fake model (no request was made)")
+
+
+def view(at):
+    return {"exceptions": [str(e.value) for e in at.exception], "warnings": [w.value for w in at.warning],
+            "infos": [i.value for i in at.info], "errors": [e.value for e in at.error],
+            "codes": [c.value for c in at.code], "buttons": [b.label for b in at.button],
+            "markdown": [m.value for m in at.markdown]}
+
+
+at = AppTest.from_file("dashboard.py", default_timeout=240).run()
+out = {"first": view(at)}
+next(b for b in at.button if b.label == "Run analysis in the sandbox").click().run()
+out["after_run"] = view(at)
+save = [b for b in at.button if b.label == "Save a record of this analysis (exports nothing)"]
+out["after_save"] = view(save[0].click().run()) if save else {}
+out["judge_calls"] = judge.calls
+out["generated"] = generated
+out["records"] = [json.loads(p.read_text(encoding="utf-8")) for p in Path("evidence").glob("interactive_run_*.json")]
+out["exports"] = [str(p) for p in Path("out").rglob("*") if p.is_file()] if Path("out").exists() else []
+out["network_attempts"] = no_network.ATTEMPTS
+print("LIVE-JSON:" + json.dumps(out))
+"""
+
+
 class InterruptedHandle:
     """A file handle that dies halfway through the write, the way Ctrl+C would."""
 
@@ -145,6 +211,7 @@ def temp_leftovers(tmp):
 
 
 def main():
+    no_network.install()
     poc = CLASSES["CWE-22"]["poc"]
 
     # --- 1. progress is visible ------------------------------------------------------------
@@ -460,6 +527,70 @@ def main():
           ia.is_enabled({**creds, "MEGAPATCH_ENABLE_INTERACTIVE": "1"}) is True)
     check("engine: it does not import the UI or the model client at import time",
           "streamlit" not in sys.modules and "llm" not in sys.modules)
+
+    # The default: model-written code is never run. One scripted answer only (the vulnerable app): a call on
+    # the candidate would find no answer left and end the analysis in an error.
+    judge, gen_calls = FakeJudge(VULNERABLE), []
+    proposal = ia.analyze(
+        "CWE-22", judge=judge, generate=lambda c, evidence, feedback: gen_calls.append(c),
+        diff_of=lambda c: f"--- target_app/app.py\n+++ candidates/{c}/app.py\n@@\n-old\n+new\n",
+        read_candidate=lambda c: "candidate source")
+    last = proposal["attempts"][-1] if proposal["attempts"] else {}
+    with tempfile.TemporaryDirectory() as tmp:
+        try:
+            decide(proposal, True, tmp)
+            approvable = True
+        except ValueError:
+            approvable = False
+        saved = decide(proposal, False, tmp, stamp="20260101T000009Z")
+        record = json.loads(Path(saved["evidence_path"]).read_text(encoding="utf-8"))
+        exports = [p for p in (Path(tmp) / "out").rglob("*") if p.is_file()] if (Path(tmp) / "out").exists() else []
+    patch = next(iter(record["patches"].values()))
+    check("default: the candidate is never run; the analysis stops at a proposal, not executed and not verified, "
+          "that cannot be approved, and saving the record exports nothing",
+          policy.CANDIDATES_MAY_RUN is False and proposal["state"] == "proposed_not_run"
+          and judge.calls == [("target_app", CLASSES["CWE-22"]["poc"], False)] and gen_calls == ["CWE-22"]
+          and last.get("executed") is False and last.get("accepted") is False and "poc_exit" not in last
+          and not approvable and saved["exported"] is False and not exports and patch["exported"] is False
+          and record["final_order"][0]["status"].endswith(policy.NOT_RUN),
+          f"({proposal['state']}, {judge.calls})")
+    # The proposed_not_run view in the dashboard, with simulated dependencies (see LIVE_VIEW_CHILD).
+    with tempfile.TemporaryDirectory() as tmp:
+        copy = Path(tmp) / "project"
+        copy.mkdir()
+        for path in list(HERE.glob("*.py")) + [HERE / "requirements-scan.txt"]:
+            shutil.copy2(path, copy / path.name)
+        for name in ("data", "scans", "target_app", "reference_patch", "evidence"):
+            shutil.copytree(HERE / name, copy / name, ignore=shutil.ignore_patterns("__pycache__", "run_2*",
+                                                                                     "interactive_run_*"))
+        env = {**{k: v for k, v in os.environ.items() if not k.upper().startswith(("NEBIUS", "TAVILY"))},
+               "MEGAPATCH_ENABLE_INTERACTIVE": "1", "NEBIUS_API_KEY": "placeholder-not-a-key",
+               "NEBIUS_PROJECT_ID": "placeholder-not-a-project", "PYTHONIOENCODING": "utf-8"}
+        proc = subprocess.run([sys.executable, "-c", LIVE_VIEW_CHILD], cwd=copy, capture_output=True, text=True,
+                              timeout=900, env=env, encoding="utf-8", errors="replace")
+        line = next((ln for ln in proc.stdout.splitlines() if ln.startswith("LIVE-JSON:")), None)
+        live = json.loads(line.removeprefix("LIVE-JSON:")) if line else {}
+    after, saved = live.get("after_run", {}), live.get("after_save", {})
+    records = live.get("records", [])
+    patch = next(iter(records[0]["patches"].values())) if records else {}
+    check("dashboard (simulated, no request): the analysis stops at a proposal shown as not executed and not "
+          "verified, with the diff; no Approve button; the judge only ever saw the practice app",
+          bool(after) and not after["exceptions"]
+          and any("Not executed, not verified" in w for w in after["warnings"])
+          and any("A proposal for a person to read" in w for w in after["warnings"])
+          and any("+proposed line" in c for c in after["codes"])
+          and "Approve export of this patch" not in after["buttons"]
+          and "Save a record of this analysis (exports nothing)" in after["buttons"]
+          and [c[0] for c in live.get("judge_calls", [])] == ["target_app"]
+          and live["judge_calls"][0][1] in {c["poc"] for c in CLASSES.values()} and live["judge_calls"][0][2] is False
+          and len(live.get("generated", [])) == 1,
+          f"({(after.get('exceptions') or [proc.stderr[-300:]])[:1]}, {live.get('judge_calls')})")
+    check("dashboard (simulated): saving the record exports nothing; the record says the patch was not executed",
+          bool(saved) and not saved["exceptions"] and any("Nothing was exported" in i for i in saved["infos"])
+          and len(records) == 1 and patch.get("executed") is False and patch.get("exported") is False
+          and records[0]["final_order"][0]["status"].endswith(policy.NOT_RUN) and live.get("exports") == []
+          and live.get("network_attempts") == [], f"({len(records)}, {live.get('exports')})")
+    check("no check tried to reach another host", not no_network.ATTEMPTS, f"({no_network.ATTEMPTS})")
 
     print("\nCHECK-INTERACTIVE:", "ALL PASSED" if all(results) else "FAILED")
     sys.exit(0 if all(results) else 1)

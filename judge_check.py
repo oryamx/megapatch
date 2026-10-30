@@ -5,6 +5,10 @@ For every vulnerability class it runs the class's PoC against the vulnerable app
 the functional tests on both. It also checks that ScoreRisk is deterministic.
 
 Usage: python judge_check.py
+Ends with ALL PASSED (exit code 0) only when every check ran in full and passed; FAILED (exit code 1) when any
+check failed; INCOMPLETE (exit code 2) when none failed but a check script skipped part of its work (it printed
+SKIP or SKIPPED, for example because the pinned scanners of requirements-scan.txt are not installed). A skipped
+part is never counted as passed.
 """
 import json
 import os
@@ -14,6 +18,7 @@ import tempfile
 from collections import Counter
 from pathlib import Path
 
+import no_network
 from catalog import CLASSES, judge_fingerprint
 from evidence_utils import lf_sha
 from judge import is_accepted
@@ -32,6 +37,7 @@ EXPECTED_PATCHES = {"human_approved_run_b.json": ("bandit:CWE-78", "bandit:CWE-8
 assert set(EXPECTED_PATCHES) == set(CURRENT_JUDGE_RUNS), "every current-judge run needs its expected patches"
 INVENTORY_RUNS = REJUDGED_RUNS + CURRENT_JUDGE_RUNS
 checks = []
+incomplete = []  # check scripts that skipped part of their work: never counted as passed
 stale_records = []
 
 
@@ -149,7 +155,27 @@ def run(cmd, env=None):
     return proc.returncode, (proc.stdout + proc.stderr).strip()
 
 
+def sub_check(name, script):
+    """Run one check script and read its verdict line (CHECK-...: ALL PASSED / INCOMPLETE / FAILED), its exit code
+    and the lines that start with [FAIL] or [SKIP] (never words elsewhere in the output). It passes only if it ran in
+    full: exit code 0, ALL PASSED and no [SKIP] line. If it skipped a part (exit code 2 with INCOMPLETE, or a [SKIP]
+    line) and no check failed, it is INCOMPLETE, which is not a pass. Anything else is a failure: exit code 1,
+    FAILED, a [FAIL] line, a crash, no verdict."""
+    code, out = run([sys.executable, script])
+    lines = out.splitlines()
+    verdicts = [line for line in lines if line.startswith("CHECK-")]
+    verdict = verdicts[-1] if verdicts else (lines or ["(no output)"])[-1]
+    skips = [line.strip() for line in lines if line.startswith("[SKIP]")]
+    failed = code not in (0, 2) or verdict.endswith("FAILED") or any(line.startswith("[FAIL]") for line in lines)
+    if not failed and ((code == 2 and ": INCOMPLETE" in verdict) or (code == 0 and skips)):
+        incomplete.append(name)
+        print(f"[INCOMPLETE] {name} ({(skips or [verdict])[0][:200]})")
+    else:
+        check(name, not failed and code == 0 and verdict.endswith("ALL PASSED"), verdict)
+
+
 def main():
+    no_network.install()  # this process reaches no other host; each check script installs it for itself too
     for cwe, info in CLASSES.items():
         code, _ = run([sys.executable, info["poc"], VULNERABLE])
         check(f"{cwe} {info['name']}: exploit works on {VULNERABLE} (RED)", code == 1, f"exit={code}")
@@ -253,48 +279,57 @@ def main():
 
     # The interactive mode's rules (progress, same PoC, approval gating), exercised with fake
     # judge/model functions: no credentials, no network, nothing written outside a temp folder.
-    code, out = run([sys.executable, "check_interactive.py"])
-    check(
+    sub_check(
         "interactive mode: progress, same PoC and approval gating hold",
-        code == 0 and "ALL PASSED" in out,
-        (out.splitlines() or [""])[-1],
+        "check_interactive.py",
     )
 
     # How an export is shown: pending, failed and declined are told apart, and exported=false is
     # never read as a refusal by itself. Uses temporary folders and a temporary copy of the project.
-    code, out = run([sys.executable, "check_export_state.py"])
-    check(
+    sub_check(
         "export state: pending, failed and declined are told apart in the patch detail",
-        code == 0 and "ALL PASSED" in out,
-        (out.splitlines() or [""])[-1],
+        "check_export_state.py",
     )
 
     # What a first-time visitor sees: the five-step loop, stated with numbers computed from the files,
     # the approval kind of each run as recorded, and one finding followed with the same PoC. Read-only.
-    code, out = run([sys.executable, "check_walkthrough.py"])
-    check(
+    sub_check(
         "dashboard story: the five steps and the walkthrough match the recorded data",
-        code == 0 and "ALL PASSED" in out,
-        (out.splitlines() or [""])[-1],
+        "check_walkthrough.py",
     )
 
     # The English / Español selector changes words only: same data in both languages, nothing left untranslated,
     # and the selected run and finding survive a switch. Read-only.
-    code, out = run([sys.executable, "check_language.py"])
-    check(
+    sub_check(
         "language: Spanish and English show the same data, and the interface is fully translated",
-        code == 0 and "ALL PASSED" in out,
-        (out.splitlines() or [""])[-1],
+        "check_language.py",
     )
 
     # Scanning another repository: the file and line of each finding are kept, nothing from that repository is
     # run, every scan keeps its own folder, the two queues use no made-up values, and the demo's files are never
     # written. Fake pip-audit output, a temporary folder, no network.
-    code, out = run([sys.executable, "check_repo_scan.py"])
-    check(
+    sub_check(
         "repository scan: real file and line, nothing executed, one new folder per scan, two queues, demo untouched",
-        code == 0 and "ALL PASSED" in out,
-        (out.splitlines() or [""])[-1],
+        "check_repo_scan.py",
+    )
+
+    # A patch proposal for one B602 finding: only the target function is sent, only with consent; the answer is
+    # reviewed statically on a disposable copy and exported only after approval. Fake Nemotron, no request is
+    # made. It needs the pinned scanners (requirements-scan.txt); without them it says SKIPPED: INCOMPLETE here.
+    sub_check(
+        "patch proposal (B602): only the function, only with consent, statically reviewed, never run, approved by "
+        "a person before export",
+        "check_patch_proposal.py",
+    )
+
+    # What MegaPatch may reach and run: model-written code is never run (sandbox or --local), the PoCs reach the
+    # practice app only in-process, a scan is local unless asked otherwise, and a text search finds six network
+    # call patterns only in the listed modules of MegaPatch's own code (a limited inventory, not a proof of
+    # isolation). Its in-process detector refuses other hosts in its own process. Read-only.
+    sub_check(
+        "offline: no model-written code is run, PoCs stay in-process, scans are local by default, network call "
+        "patterns only in listed modules (a text search)",
+        "check_offline.py",
     )
 
     first, _ = score_all()
@@ -314,8 +349,16 @@ def main():
             + "\n  The judge (PoCs, tests, harness, app, catalog, sandbox_judge or judge.py) changed after the"
             "\n  record was made, so its verdicts describe an OLDER judge. Re-run `python rejudge.py --force`."
         )
-    print("\nJUDGE-CHECK:", "ALL PASSED" if all(checks) else "FAILED")
-    sys.exit(0 if all(checks) else 1)
+    check("judge_check itself did not try to reach another host", not no_network.ATTEMPTS, f"({no_network.ATTEMPTS})")
+    if not all(checks):
+        print("\nJUDGE-CHECK: FAILED")
+        sys.exit(1)
+    if incomplete:
+        print(f"\nJUDGE-CHECK: INCOMPLETE ({len(incomplete)} check(s) skipped part of their work and did not pass: "
+              + "; ".join(incomplete) + ")")
+        sys.exit(2)
+    print("\nJUDGE-CHECK: ALL PASSED")
+    sys.exit(0)
 
 
 if __name__ == "__main__":

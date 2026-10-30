@@ -5,12 +5,19 @@ Scope, deliberately small:
   2. the SAME PoC is shown before and after the patch;
   3. nothing is exported until a person approves the judge-accepted patch.
 
+For now the patch is NOT run (execution_policy.py): model-written code runs nowhere until an environment is
+proven to block outbound network. The analysis confirms the vulnerability on the practice app, asks Nemotron
+for a patch, shows it as a proposal "not executed and not verified" and stops (state "proposed_not_run"):
+there is no judge verdict, so nothing can be approved or exported.
+
 It reuses the CLI's functions and does not change the judge or the CLI. There is no
 Streamlit import here, so every rule below is tested without a browser
 (see check_interactive.py).
 
 What it does NOT claim: the PoCs call the app in-process through Flask's test client
-(not over HTTP), and the sandbox's outbound network is not blocked.
+(not over HTTP), and the sandbox is not shown to be offline: on 2026-10-10 one outbound
+TCP connection from it to pypi.org:443 succeeded, which does not establish the full
+extent of its network access.
 """
 import contextlib
 import json
@@ -21,6 +28,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from types import SimpleNamespace
 
+import execution_policy as policy
 from catalog import CLASSES
 from judge import is_accepted
 
@@ -99,7 +107,8 @@ def analyze(cwe, *, judge, generate, diff_of, read_candidate, prepare=None, noti
     """Confirm, patch, judge (repairing once on rejection) and STOP before any export.
 
     Returns a dict whose "state" is one of: awaiting_approval, rejected_by_judge,
-    not_confirmed, error. It never exports and never asks anything of a person.
+    not_confirmed, proposed_not_run (the patch was not run: execution_policy), error.
+    It never exports and never asks anything of a person.
     Every call gets its own "session_id", which names everything that is later written."""
     info = CLASSES[cwe]
     poc = info["poc"]
@@ -131,6 +140,14 @@ def analyze(cwe, *, judge, generate, diff_of, read_candidate, prepare=None, noti
             generate(cwe, evidence, feedback)
             diff = diff_of(cwe)
             progress.finish(stage, "done", f"{len(diff.splitlines())} diff lines")
+
+            if not policy.candidates_may_run():  # the candidate is never run: a proposal, and the analysis stops
+                stage = progress.start(f"not_run_{attempt}", f"Not run: {policy.NOT_RUN}")
+                result["attempts"].append({"attempt": attempt, "approved": False, "accepted": False,
+                                           "executed": False, "diff": diff, "not_run": policy.REASON})
+                progress.finish(stage, "done", policy.REASON)
+                result["state"] = "proposed_not_run"
+                return _close(result, now)
 
             stage = progress.start(
                 f"judge_{attempt}", f"Judge it in the sandbox: the same {poc} and the functional tests"
@@ -252,6 +269,8 @@ def decide(result, approve, *, finding, ranked, stamp, model, usage, fingerprint
     if not approve:
         if not last:
             text = "CONFIRMED -> no patch was produced" if result["before"] else "not analyzed"
+        elif result["state"] == "proposed_not_run":
+            text = f"CONFIRMED -> patch proposed by Nemotron, {policy.NOT_RUN}"
         elif asked:
             text = "CONFIRMED -> patch accepted by the judge, export not approved"
         else:

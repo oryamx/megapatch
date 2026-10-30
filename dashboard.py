@@ -626,13 +626,15 @@ with tab_repro:
 ```bash
 git clone https://github.com/oryamx/megapatch
 cd megapatch
-pip install -r requirements.txt
+pip install -r requirements.txt -r requirements-scan.txt
 python judge_check.py
 ```
 
 {t("repro_full")}
 
 ```bash
+pip install -r requirements-pipeline.txt
+cp .env.example .env
 python megapatch.py
 ```
 
@@ -716,6 +718,7 @@ def render_interactive(ia_module):
             label={"awaiting_approval": t("live_done_awaiting"),
                    "rejected_by_judge": t("live_done_rejected"),
                    "not_confirmed": t("live_not_confirmed"),
+                   "proposed_not_run": t("live_done_not_run"),
                    "error": t("live_error")}[result["state"]],
             state="error" if result["state"] == "error" else "complete",
         )
@@ -735,9 +738,12 @@ def render_interactive(ia_module):
         left.code(result["before"]["poc_output"], language="text", wrap_lines=True)
         if result["attempts"]:
             last = result["attempts"][-1]
-            tail = ((last.get("tests_output") or "").strip().splitlines() or ["n/a"])[-1]
-            right.markdown(t("live_after", poc=result["poc"], pe=last["poc_exit"], te=last["tests_exit"]))
-            right.code(f"{last['poc_output']}\n\ntests: {tail}", language="text", wrap_lines=True)
+            if last.get("executed") is False:  # a proposal: the exploit and the tests never ran against it
+                right.warning(t("live_not_run"))
+            else:
+                tail = ((last.get("tests_output") or "").strip().splitlines() or ["n/a"])[-1]
+                right.markdown(t("live_after", poc=result["poc"], pe=last["poc_exit"], te=last["tests_exit"]))
+                right.code(f"{last['poc_output']}\n\ntests: {tail}", language="text", wrap_lines=True)
             st.code(last["diff"], language="diff")
 
     decision = st.session_state.get("ia_decision")
@@ -751,6 +757,9 @@ def render_interactive(ia_module):
         a, b = st.columns(2)
         a.button(t("live_approve"), type="primary", on_click=_decide, args=(True, ia_module, finding))
         b.button(t("live_reject"), on_click=_decide, args=(False, ia_module, finding))
+    elif result["state"] == "proposed_not_run":
+        st.warning(t("live_not_run_no_export"))
+        st.button(t("live_save_record"), on_click=_decide, args=(False, ia_module, finding))
     elif result["state"] in ("rejected_by_judge", "not_confirmed", "error"):
         st.error(t("live_no_patch"))
         st.button(t("live_save_record"), on_click=_decide, args=(False, ia_module, finding))

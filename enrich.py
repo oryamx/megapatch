@@ -8,7 +8,9 @@ Design rules:
 - This NEVER changes the ScoreRisk number: the score stays deterministic.
 - Web snippets are untrusted data. The model gets no tools, must answer in a fixed
   JSON shape, and its output is only displayed; it never triggers an action.
-- Without TAVILY_API_KEY the step is skipped and the pipeline continues.
+- Off unless asked for explicitly (megapatch.py --enrich): a TAVILY_API_KEY alone does not turn it
+  on. When asked for, it sends a search query with the CVE id to Tavily, and Tavily's snippets to
+  Nemotron. Without TAVILY_API_KEY it is skipped too, and the pipeline continues.
 """
 import json
 import os
@@ -89,7 +91,10 @@ def summarize(finding, sources):
     return assessment
 
 
-def enrich_finding(finding):
+def enrich_finding(finding, *, requested=False):
+    """Public evidence for one finding, only when the caller says it was asked for (`requested`)."""
+    if not requested:  # the key existing is not a request
+        return {"skipped": "not requested (run megapatch.py with --enrich)"}
     if not os.getenv("TAVILY_API_KEY"):
         return {"skipped": "TAVILY_API_KEY is not set"}
     query = build_query(finding)

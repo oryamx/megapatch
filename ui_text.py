@@ -35,10 +35,12 @@ TEXT = {
     "kind_mixed": {"en": "mixed or unrecorded approval", "es": "aprobación mixta o no registrada"},
     # ---------- header ----------
     "tagline": {
-        "en": "Rank what matters, prove it is exploitable by running the exploit, patch it, "
-              "and re-run the same exploit. The score proposes; execution disposes.",
-        "es": "Prioriza lo que importa, demuestra que es explotable ejecutando el exploit, parchéalo "
-              "y vuelve a ejecutar el mismo exploit. El puntaje propone; la ejecución decide.",
+        "en": "Rank what matters, prove it is exploitable by running the exploit against our practice app, and "
+              "have Nemotron propose the fix. The recorded runs show the full loop; this version does not run "
+              "model-written code.",
+        "es": "Prioriza lo que importa, demuestra que es explotable ejecutando el exploit contra nuestra app de "
+              "práctica, y deja que Nemotron proponga el arreglo. Las corridas grabadas muestran el ciclo completo; "
+              "esta versión no ejecuta código escrito por el modelo.",
     },
     "recorded_notice": {
         "en": "**You are looking at a recorded run** (`{file}`). This page does not analyze anything live: it shows "
@@ -78,55 +80,63 @@ TEXT = {
     "howto_does": {
         "en": "**What MegaPatch does**\n\n"
               "1. Prioritize: the ScoreRisk rule ranks every finding.\n"
-              "2. Prove: the PoC runs against the app in a Nebius sandbox.\n"
-              "3. Patch: NVIDIA Nemotron writes a fix.\n"
-              "4. Re-test: the same PoC and the tests judge the fix; a rejected fix gets one repair.\n"
-              "5. Approve: a person decides whether the fix is exported.",
+              "2. Prove: the PoC runs against the practice app in a Nebius sandbox.\n"
+              "3. Propose: NVIDIA Nemotron writes a fix, shown as a proposal, not executed and not verified.\n\n"
+              "The recorded runs on this page went two steps further, before this version stopped running "
+              "model-written code: the same PoC and the tests judged each fix (a rejected fix got one repair), and "
+              "an approval step decided whether it was exported (a person answered in the two runs made without "
+              "`--yes`).",
         "es": "**Qué hace MegaPatch**\n\n"
               "1. Priorizar: la regla ScoreRisk ordena todos los hallazgos.\n"
-              "2. Probar: el PoC se ejecuta contra la app en un sandbox de Nebius.\n"
-              "3. Parchear: NVIDIA Nemotron escribe un arreglo.\n"
-              "4. Re-probar: el mismo PoC y las pruebas juzgan el arreglo; si lo rechazan, hay un intento de "
-              "reparación.\n"
-              "5. Aprobar: una persona decide si el arreglo se exporta.",
+              "2. Probar: el PoC se ejecuta contra la app de práctica en un sandbox de Nebius.\n"
+              "3. Proponer: NVIDIA Nemotron escribe un arreglo, que se muestra como una propuesta, no ejecutada y no "
+              "verificada.\n\n"
+              "Las corridas grabadas de esta página llegaron dos pasos más lejos, antes de que esta versión dejara "
+              "de ejecutar código escrito por el modelo: el mismo PoC y las pruebas juzgaron cada arreglo (si lo "
+              "rechazaban, había un intento de reparación) y un paso de aprobación decidió si se exportaba (una "
+              "persona respondió en las dos corridas hechas sin `--yes`).",
     },
     "howto_produces": {
         "en": "**What it produces**\n\n"
               "- A ranked queue, with an action band and its basis for every finding.\n"
               "- A verdict for each finding it can verify, with the exploit's output.\n"
-              "- A patch (diff) and the result of re-running the same PoC and the tests.\n"
-              "- An evidence record (JSON) with the approvals and fingerprints of the inputs and of the judge.",
+              "- A patch proposal (diff), not executed and not verified; in the recorded runs, also the result of "
+              "re-running the same PoC and the tests against the patch.\n"
+              "- An evidence record (JSON) with the fingerprints of the inputs and of the judge (and, in the recorded "
+              "runs, the approvals).",
         "es": "**Qué produce**\n\n"
               "- Una cola ordenada, con una banda de acción y su fundamento para cada hallazgo.\n"
               "- Un veredicto para cada hallazgo que puede verificar, con la salida del exploit.\n"
-              "- Un parche (diff) y el resultado de volver a ejecutar el mismo PoC y las pruebas.\n"
-              "- Un registro de evidencia (JSON) con las aprobaciones y las huellas de las entradas y del juez.",
+              "- Una propuesta de parche (diff), no ejecutada y no verificada; en las corridas grabadas, también el "
+              "resultado de volver a ejecutar el mismo PoC y las pruebas contra el parche.\n"
+              "- Un registro de evidencia (JSON) con las huellas de las entradas y del juez (y, en las corridas "
+              "grabadas, las aprobaciones).",
     },
     "howto_review": {
         "en": "**What a person must review**\n\n"
               "- The declared exposure and the weights behind the ranking.\n"
-              "- Every patch diff, before approving its export.\n"
+              "- Every patch proposal, by reading its diff: in this version none is run or tested.\n"
               "- What the PoC and the tests do not cover: \"accepted by the judge\" is not \"safe in production\".\n"
               "- Findings marked not verifiable: they still need a decision.",
         "es": "**Qué debe revisar una persona**\n\n"
               "- La exposición declarada y los pesos detrás del orden.\n"
-              "- Cada diff de parche, antes de aprobar su exportación.\n"
+              "- Cada propuesta de parche, leyendo su diff: en esta versión ninguna se ejecuta ni se prueba.\n"
               "- Lo que el PoC y las pruebas no cubren: \"aceptado por el juez\" no es \"seguro en producción\".\n"
               "- Los hallazgos marcados como no verificables: igual necesitan una decisión.",
     },
     # ---------- quick start (inside the how-to block); the commands themselves are in QUICKSTART_COMMANDS ----------
     "qs_title": {"en": "**Quick start**", "es": "**Inicio rápido**"},
     "qs_scope": {
-        "en": '**What works today.** The public demo only shows recorded runs. On your own machine, MegaPatch scans any Python project read-only (Bandit for the code, pip-audit for the pinned requirements) and ranks the real findings with their file and line, but it cannot verify or patch them. The PoCs and the patches work only with the bundled practice app (`target_app/`).',
-        "es": '**Qué funciona hoy.** La demo pública solo muestra corridas grabadas. En tu propia máquina, MegaPatch escanea cualquier proyecto Python en modo de solo lectura (Bandit para el código, pip-audit para los requisitos fijados) y ordena los hallazgos reales con su archivo y su línea, pero no puede verificarlos ni parchearlos. Los PoC y los parches solo funcionan con la app de práctica incluida (`target_app/`).',
+        "en": '**What works today.** The public demo only shows recorded runs. On your own machine, MegaPatch scans any Python project read-only (Bandit for the code; pip-audit for the pinned requirements, only if you tick it) and ranks the real findings with their file and line, but it cannot verify or patch them: for one finding type (Bandit B602) it can ask Nemotron for a patch proposal, which is reviewed statically and never run or applied to the project. The PoCs run only against the bundled practice app (`target_app/`), and Nemotron\'s patches for it are proposals, not executed and not verified.',
+        "es": '**Qué funciona hoy.** La demo pública solo muestra corridas grabadas. En tu propia máquina, MegaPatch escanea cualquier proyecto Python en modo de solo lectura (Bandit para el código; pip-audit para los requisitos fijados, solo si lo marcas) y ordena los hallazgos reales con su archivo y su línea, pero no puede verificarlos ni parchearlos: para un tipo de hallazgo (Bandit B602) puede pedir a Nemotron una propuesta de parche, que se revisa de forma estática y nunca se ejecuta ni se aplica al proyecto. Los PoC solo se ejecutan contra la app de práctica incluida (`target_app/`), y los parches de Nemotron para ella son propuestas, no ejecutadas y no verificadas.',
     },
     "qs_install": {
         "en": '**1. Install** MegaPatch and the scanners, at the exact versions a scan checks (`requirements-scan.txt`).',
         "es": '**1. Instala** MegaPatch y los escáneres, en las versiones exactas que comprueba cada escaneo (`requirements-scan.txt`).',
     },
     "qs_scan": {
-        "en": '**2. Start the dashboard in local scan mode**, open *Your repository (local)*, type the folder of your project and press *Scan (read-only)*. Nothing from the project is installed, imported or run, its folder is not changed, and every scan is saved in a new folder `analysis/<project>/scans/<scan id>/`. `--server.address 127.0.0.1` only limits incoming connections (the page answers on this machine only); the scan still sends the outgoing requests listed under *What leaves this machine*.',
-        "es": '**2. Abre el dashboard en modo de escaneo local**, ve a *Tu repositorio (local)*, escribe la carpeta de tu proyecto y pulsa *Escanear (solo lectura)*. No se instala, importa ni ejecuta nada del proyecto, su carpeta no cambia y cada escaneo se guarda en una carpeta nueva `analysis/<proyecto>/scans/<id del escaneo>/`. `--server.address 127.0.0.1` solo limita las conexiones entrantes (la página responde solo en esta máquina); el escaneo sigue haciendo las consultas salientes indicadas en *Qué sale de esta máquina*.',
+        "en": '**2. Start the dashboard in local scan mode**, open *Your repository (local)*, type the folder of your project and press *Scan (read-only)*. Nothing from the project is installed, imported or run, its folder is not changed, and every scan is saved in a new folder `analysis/<project>/scans/<scan id>/`. `--server.address 127.0.0.1` only limits incoming connections (the page answers on this machine only); by default the scan sends nothing at all; the dependency check (PyPI) and the threat data are two boxes you tick yourself.',
+        "es": '**2. Abre el dashboard en modo de escaneo local**, ve a *Tu repositorio (local)*, escribe la carpeta de tu proyecto y pulsa *Escanear (solo lectura)*. No se instala, importa ni ejecuta nada del proyecto, su carpeta no cambia y cada escaneo se guarda en una carpeta nueva `analysis/<proyecto>/scans/<id del escaneo>/`. `--server.address 127.0.0.1` solo limita las conexiones entrantes (la página responde solo en esta máquina); por defecto el escaneo no envía nada; la comprobación de dependencias (PyPI) y los datos de amenazas son dos casillas que marcas tú.',
     },
     "qs_assets": {
         "en": '**3. Declare the exposure** in the same tab: reachable from the internet, authentication, production, sensitive data. A field left as *Unknown* stays unknown, never "not exposed". Each declaration is saved as a new file in `analysis/<project>/exposure/`; there is no JSON to edit.',
@@ -137,12 +147,12 @@ TEXT = {
         "es": '**4. Lee las dos colas**: las dependencias ordenadas por ScoreRisk, con los datos que sostienen cada posición y un rango donde faltan datos, y los hallazgos de código ordenados por la severidad y la confianza de Bandit. Lo mismo sin el dashboard:',
     },
     "qs_analyze": {
-        "en": '**5. Local analysis with Nebius**, practice app only, spends credits. In `.env` (a copy of `.env.example`) set `NEBIUS_API_KEY` and `NEBIUS_PROJECT_ID` (a Token Factory account with Sandboxes access); `TAVILY_API_KEY` is optional and `MEGAPATCH_ENABLE_INTERACTIVE=1` turns on the *Analyze (local)* tab. Without `--yes`, you approve each export.',
-        "es": '**5. Análisis local con Nebius**, solo la app de práctica, gasta créditos. En `.env` (una copia de `.env.example`) configura `NEBIUS_API_KEY` y `NEBIUS_PROJECT_ID` (una cuenta de Token Factory con acceso a Sandboxes); `TAVILY_API_KEY` es opcional y `MEGAPATCH_ENABLE_INTERACTIVE=1` activa la pestaña *Analizar (local)*. Sin `--yes`, apruebas cada exportación.',
+        "en": '**5. Local analysis with Nebius**, practice app only, spends credits. In `.env` (a copy of `.env.example`) set `NEBIUS_API_KEY` and `NEBIUS_PROJECT_ID` (a Token Factory account with Sandboxes access); `TAVILY_API_KEY` is optional and used only with `--enrich`; `MEGAPATCH_ENABLE_INTERACTIVE=1` turns on the *Analyze (local)* tab. Nemotron writes the patch; for now it is not run (a proposal, not executed and not verified), so nothing is exported.',
+        "es": '**5. Análisis local con Nebius**, solo la app de práctica, gasta créditos. En `.env` (una copia de `.env.example`) configura `NEBIUS_API_KEY` y `NEBIUS_PROJECT_ID` (una cuenta de Token Factory con acceso a Sandboxes); `TAVILY_API_KEY` es opcional y solo se usa con `--enrich`; `MEGAPATCH_ENABLE_INTERACTIVE=1` activa la pestaña *Analizar (local)*. Nemotron escribe el parche; por ahora no se ejecuta (una propuesta, no ejecutada y no verificada), así que no se exporta nada.',
     },
     "qs_results": {
-        "en": '**6. Where the results go.**\n\n- Scans: `analysis/<project>/scans/<scan id>/` (a new folder each time) and exposure declarations in `analysis/<project>/exposure/`; nothing is overwritten and `analysis/` is not committed.\n- `python megapatch.py`: a new record `evidence/run_<UTC time>.json` (or `evidence/NAME.json` with `--save-as NAME`) and the approved diffs in a new folder `out/patches/<run>/`; nothing earlier is replaced.\n- *Analyze (local)*: `evidence/interactive_run_<session>.json` and `out/patches/<session>/<CWE>.diff`; nothing is overwritten.',
-        "es": '**6. Dónde quedan los resultados.**\n\n- Escaneos: `analysis/<proyecto>/scans/<id del escaneo>/` (una carpeta nueva cada vez) y las declaraciones de exposición en `analysis/<proyecto>/exposure/`; no se sobrescribe nada y `analysis/` no se sube al repositorio.\n- `python megapatch.py`: un registro nuevo `evidence/run_<hora UTC>.json` (o `evidence/NOMBRE.json` con `--save-as NOMBRE`) y los diffs aprobados en una carpeta nueva `out/patches/<corrida>/`; no se reemplaza nada anterior.\n- *Analizar (local)*: `evidence/interactive_run_<sesión>.json` y `out/patches/<sesión>/<CWE>.diff`; no se sobrescribe nada.',
+        "en": '**6. Where the results go.**\n\n- Scans: `analysis/<project>/scans/<scan id>/` (a new folder each time) and exposure declarations in `analysis/<project>/exposure/`; nothing is overwritten and `analysis/` is not committed.\n- B602 patch proposals: `analysis/<project>/proposals/<proposal id>/`, and an approved diff in `analysis/<project>/patches/`; the project itself is never modified.\n- `python megapatch.py`: a new record `evidence/run_<UTC time>.json` (or `evidence/NAME.json` with `--save-as NAME`); nothing earlier is replaced. No diff is exported in this version, because the patches are proposals: `out/patches/<run>/` only receives a diff that a judge accepted and a person approved.\n- *Analyze (local)*: a record `evidence/interactive_run_<session>.json`, if you save one; for the same reason it exports nothing (`out/patches/<session>/<CWE>.diff` is not written in this version). Nothing is overwritten.',
+        "es": '**6. Dónde quedan los resultados.**\n\n- Escaneos: `analysis/<proyecto>/scans/<id del escaneo>/` (una carpeta nueva cada vez) y las declaraciones de exposición en `analysis/<proyecto>/exposure/`; no se sobrescribe nada y `analysis/` no se sube al repositorio.\n- Propuestas de parche B602: `analysis/<proyecto>/proposals/<id de la propuesta>/`, y un diff aprobado en `analysis/<proyecto>/patches/`; el proyecto en sí nunca se modifica.\n- `python megapatch.py`: un registro nuevo `evidence/run_<hora UTC>.json` (o `evidence/NOMBRE.json` con `--save-as NOMBRE`); no se reemplaza nada anterior. En esta versión no se exporta ningún diff, porque los parches son propuestas: `out/patches/<corrida>/` solo recibe un diff que un juez aceptó y una persona aprobó.\n- *Analizar (local)*: un registro `evidence/interactive_run_<sesión>.json`, si decides guardarlo; por el mismo motivo no exporta nada (`out/patches/<sesión>/<CWE>.diff` no se escribe en esta versión). No se sobrescribe nada.',
     },
     # ---------- your repository (local scan tab) ----------
     "tab_repo": {
@@ -154,12 +164,12 @@ TEXT = {
         "es": 'Escanea tu repositorio Python (local, solo lectura)',
     },
     "rp_intro": {
-        "en": "MegaPatch runs **Bandit** on the code and **pip-audit** on the pinned requirements of a folder on this machine, at pinned versions, and shows the real findings with their file and line. It never installs, imports or runs the project's code, never changes its folder, and sends no source code anywhere (not to Streamlit, Nebius, Tavily or a model). The findings are not verified by execution and no patch is written.",
-        "es": 'MegaPatch ejecuta **Bandit** sobre el código y **pip-audit** sobre los requisitos fijados de una carpeta de esta máquina, en versiones fijadas, y muestra los hallazgos reales con su archivo y su línea. Nunca instala, importa ni ejecuta el código del proyecto, nunca cambia su carpeta y no envía código fuente a ninguna parte (ni a Streamlit, ni a Nebius, ni a Tavily, ni a un modelo). Los hallazgos no se verifican ejecutándolos y no se escribe ningún parche.',
+        "en": "MegaPatch runs **Bandit** on the code of a folder on this machine and, only if you tick the box, **pip-audit** on its pinned requirements, at pinned versions, and shows the real findings with their file and line. It never installs, imports or runs the project's code and never changes its folder, and the scan sends no source code anywhere (not to Streamlit, Nebius, Tavily or a model). The findings are not verified by execution. Only a B602 patch proposal you authorize below sends code: the exact text it shows you first, which includes one function; the answer is reviewed statically and never run.",
+        "es": 'MegaPatch ejecuta **Bandit** sobre el código de una carpeta de esta máquina y, solo si marcas la casilla, **pip-audit** sobre sus requisitos fijados, en versiones fijadas, y muestra los hallazgos reales con su archivo y su línea. Nunca instala, importa ni ejecuta el código del proyecto ni cambia su carpeta, y el escaneo no envía código fuente a ninguna parte (ni a Streamlit, ni a Nebius, ni a Tavily, ni a un modelo). Los hallazgos no se verifican ejecutándolos. Solo una propuesta de parche B602 que autorices más abajo envía código: el texto exacto que te muestra antes, que incluye una función; la respuesta se revisa de forma estática y nunca se ejecuta.',
     },
     "rp_off": {
-        "en": 'Scanning runs only on your own machine: `pip install -r requirements-scan.txt`, then `streamlit run dashboard.py --server.address 127.0.0.1 -- --local-scan`. The address only limits who can open the page; a scan still queries PyPI and, with threat data, CISA, FIRST and NVD. The public demo is read-only and has no scans.',
-        "es": 'El escaneo solo funciona en tu propia máquina: `pip install -r requirements-scan.txt` y luego `streamlit run dashboard.py --server.address 127.0.0.1 -- --local-scan`. La dirección solo limita quién puede abrir la página; un escaneo sigue consultando PyPI y, con datos de amenazas, CISA, FIRST y NVD. La demo pública es de solo lectura y no tiene escaneos.',
+        "en": 'Scanning runs only on your own machine: `pip install -r requirements-scan.txt`, then `streamlit run dashboard.py --server.address 127.0.0.1 -- --local-scan`. The address only limits who can open the page. By default a scan sends nothing; the dependency check (PyPI) and the threat data (CISA, FIRST and NVD) are boxes you tick. The public demo is read-only and has no scans.',
+        "es": 'El escaneo solo funciona en tu propia máquina: `pip install -r requirements-scan.txt` y luego `streamlit run dashboard.py --server.address 127.0.0.1 -- --local-scan`. La dirección solo limita quién puede abrir la página. Por defecto un escaneo no envía nada; la comprobación de dependencias (PyPI) y los datos de amenazas (CISA, FIRST y NVD) son casillas que marcas tú. La demo pública es de solo lectura y no tiene escaneos.',
     },
     "rp_sidebar_on": {
         "en": '**Local scan mode.** Open the *Your repository (local)* tab.',
@@ -170,8 +180,8 @@ TEXT = {
         "es": '**Modo de escaneo local rechazado.** Mira la pestaña *Tu repositorio (local)*.',
     },
     "rp_refused_not_loopback": {
-        "en": '**Scanning is off: this server also listens on network interfaces.** The local scan mode only works when the dashboard listens on this machine only, so that no other machine can ask it to scan a folder. Stop it and start it with `streamlit run dashboard.py --server.address 127.0.0.1 -- --local-scan`. The address only limits incoming connections: a scan still makes its outgoing requests (PyPI and, with threat data, CISA, FIRST and NVD).',
-        "es": '**El escaneo está desactivado: este servidor también escucha en interfaces de red.** El modo de escaneo local solo funciona cuando el dashboard escucha únicamente en esta máquina, para que ninguna otra máquina pueda pedirle que escanee una carpeta. Detenlo y arráncalo con `streamlit run dashboard.py --server.address 127.0.0.1 -- --local-scan`. La dirección solo limita las conexiones entrantes: un escaneo sigue haciendo sus consultas salientes (PyPI y, con datos de amenazas, CISA, FIRST y NVD).',
+        "en": '**Scanning is off: this server also listens on network interfaces.** The local scan mode only works when the dashboard listens on this machine only, so that no other machine can ask it to scan a folder. Stop it and start it with `streamlit run dashboard.py --server.address 127.0.0.1 -- --local-scan`. The address only limits incoming connections; what a scan sends out depends on the boxes you tick (by default, nothing).',
+        "es": '**El escaneo está desactivado: este servidor también escucha en interfaces de red.** El modo de escaneo local solo funciona cuando el dashboard escucha únicamente en esta máquina, para que ninguna otra máquina pueda pedirle que escanee una carpeta. Detenlo y arráncalo con `streamlit run dashboard.py --server.address 127.0.0.1 -- --local-scan`. La dirección solo limita las conexiones entrantes; lo que un escaneo envía depende de las casillas que marques (por defecto, nada).',
     },
     "rp_refused_remote": {
         "en": '**Scanning is off for this session:** it does not come from this machine. Open the dashboard on the machine where it runs, at http://127.0.0.1.',
@@ -190,12 +200,44 @@ TEXT = {
         "es": 'Nombre del proyecto (opcional; por defecto, el nombre de la carpeta)',
     },
     "rp_threat": {
-        "en": 'Download public threat data for the CVEs found (CISA KEV, FIRST EPSS, NVD): roughly 7 to 12 seconds per CVE, depending on NVD',
-        "es": 'Descargar datos públicos de amenazas para los CVE encontrados (CISA KEV, FIRST EPSS, NVD): aproximadamente de 7 a 12 segundos por CVE, según NVD',
+        "en": 'Also download public threat data for the CVEs found (sends the CVE ids)',
+        "es": 'Descargar también datos públicos de amenazas para los CVE encontrados (envía los identificadores CVE)',
+    },
+    "rp_audit": {
+        "en": "Check the pinned dependencies with PyPI (sends each package's name and version)",
+        "es": 'Comprobar las dependencias fijadas con PyPI (envía el nombre y la versión de cada paquete)',
+    },
+    "rp_audit_help": {
+        "en": "pip-audit asks PyPI's JSON API about each requirement pinned with `==`. Only the name and the version are sent; nothing is installed or run. Without it, those lines are listed as not audited.",
+        "es": 'pip-audit consulta a la API JSON de PyPI por cada requisito fijado con `==`. Solo se envían el nombre y la versión; no se instala ni se ejecuta nada. Sin esta opción, esas líneas aparecen como no auditadas.',
+    },
+    "rp_threat_help": {
+        "en": 'For the CVEs the dependency check finds: the CISA KEV catalog is downloaded (nothing is sent), and the CVE ids go to FIRST EPSS and, one per request, to NVD (roughly 7 to 12 seconds per CVE). It needs the dependency check; with no CVE, nothing is downloaded.',
+        "es": 'Para los CVE que encuentra la comprobación de dependencias: se descarga el catálogo CISA KEV (no se envía nada) y los identificadores CVE van a FIRST EPSS y, uno por consulta, a NVD (aproximadamente de 7 a 12 segundos por CVE). Necesita la comprobación de dependencias; sin CVE no se descarga nada.',
+    },
+    "rp_threat_needs_audit": {
+        "en": 'Threat data looks up the CVEs that the dependency check finds, so without that check it was not downloaded. The scan runs locally only.',
+        "es": 'Los datos de amenazas buscan los CVE que encuentra la comprobación de dependencias, así que sin esa comprobación no se descargaron. El escaneo se hace solo en local.',
+    },
+    "rp_asked": {
+        "en": 'You asked for it: {what}',
+        "es": 'Lo pediste: {what}',
+    },
+    "rp_asked_audit": {
+        "en": "pip-audit sends the name and version of each pinned package to PyPI's JSON API.",
+        "es": 'pip-audit envía el nombre y la versión de cada paquete fijado a la API JSON de PyPI.',
+    },
+    "rp_asked_threat": {
+        "en": "pip-audit sends the name and version of each pinned package to PyPI's JSON API; the CISA KEV catalog is downloaded and the CVE ids found go to FIRST EPSS and NVD.",
+        "es": 'pip-audit envía el nombre y la versión de cada paquete fijado a la API JSON de PyPI; se descarga el catálogo CISA KEV y los identificadores CVE encontrados van a FIRST EPSS y NVD.',
+    },
+    "rp_deps_not_checked": {
+        "en": 'The {n} pinned packages were not checked: the dependency check asks PyPI, and it was not requested. They are listed under *Not audited*.',
+        "es": 'Los {n} paquetes fijados no se comprobaron: la comprobación de dependencias consulta a PyPI y no se pidió. Aparecen en *No auditado*.',
     },
     "rp_sent": {
-        "en": "**What leaves this machine:** pip-audit sends the name and version of each pinned package to PyPI's JSON API. With threat data, the CISA KEV catalog is downloaded (nothing is sent) and the CVE ids go to FIRST EPSS and, one per request, to NVD. Nothing else: no source code and no file names. Bandit uses no network.",
-        "es": '**Qué sale de esta máquina:** pip-audit envía el nombre y la versión de cada paquete fijado a la API JSON de PyPI. Con los datos de amenazas, se descarga el catálogo CISA KEV (no se envía nada) y los identificadores CVE van a FIRST EPSS y, uno por consulta, a NVD. Nada más: ni código fuente ni nombres de archivos. Bandit no usa la red.',
+        "en": '**What leaves this machine: nothing, by default.** Bandit reads the Python files here, and nothing from the project is run. Each pinned requirement is listed as *not audited*. The two boxes below are off until you tick them, and each says what it sends. The scan never sends source code or file names. Only a patch proposal you authorize further down sends code: the exact function it shows you, to Nemotron, after you tick its consent box.',
+        "es": '**Qué sale de esta máquina: nada, por defecto.** Bandit lee aquí los archivos Python y no se ejecuta nada del proyecto. Cada requisito fijado aparece como *no auditado*. Las dos casillas de abajo están desactivadas hasta que las marques, y cada una dice qué envía. El escaneo nunca envía código fuente ni nombres de archivos. Solo una propuesta de parche que autorices más abajo envía código: la función exacta que te muestra, a Nemotron, después de que marques su casilla de consentimiento.',
     },
     "rp_scan_button": {
         "en": 'Scan (read-only)',
@@ -394,8 +436,8 @@ TEXT = {
         "es": 'No se excluyó nada.',
     },
     "rp_scope": {
-        "en": '**Scanned, not verified.** These findings come from the scanners only: no exploit was run and no patch was written. They are shown in two queues because a dependency advisory and a code finding have no common scale.',
-        "es": '**Escaneado, no verificado.** Estos hallazgos vienen solo de los escáneres: no se ejecutó ningún exploit ni se escribió ningún parche. Se muestran en dos colas porque un aviso de dependencia y un hallazgo de código no tienen una escala común.',
+        "en": '**Scanned, not verified.** These findings come from the scanners only: no exploit was run, and no patch is written unless you ask for a proposal below. They are shown in two queues because a dependency advisory and a code finding have no common scale.',
+        "es": '**Escaneado, no verificado.** Estos hallazgos vienen solo de los escáneres: no se ejecutó ningún exploit, y no se escribe ningún parche salvo que pidas una propuesta más abajo. Se muestran en dos colas porque un aviso de dependencia y un hallazgo de código no tienen una escala común.',
     },
     "rp_counts": {
         "en": '**{deps}** dependency findings ({cves} CVEs, {kev} in CISA KEV, {prov} with a provisional position) · **{code}** code findings ({high} high, {medium} medium, {low} low severity; {tests} in test code)',
@@ -665,6 +707,10 @@ TEXT = {
         "en": 'NVD: {n} CVE ids, one per request',
         "es": 'NVD: {n} identificadores CVE, uno por consulta',
     },
+    "rp_ext_nothing": {
+        "en": 'Nothing was queried outside this machine (no dependency check and no threat data were requested).',
+        "es": 'No se consultó nada fuera de esta máquina (no se pidió la comprobación de dependencias ni los datos de amenazas).',
+    },
     "rp_ext_bandit": {
         "en": 'Bandit: nothing (it does not use the network)',
         "es": 'Bandit: nada (no usa la red)',
@@ -674,8 +720,281 @@ TEXT = {
         "es": 'Nada más: ni código fuente ni nombres de archivos.',
     },
     "rp_not_done": {
-        "en": 'No code from the repository was run. The findings come from the scanners only: they were not verified by execution, and no patch was written.',
-        "es": 'No se ejecutó código del repositorio. Los hallazgos vienen solo de los escáneres: no se verificaron ejecutándolos y no se escribió ningún parche.',
+        "en": 'No code from the repository was run. The findings come from the scanners only: they were not verified by execution. A patch proposal, if you ask for one, is never run either.',
+        "es": 'No se ejecutó código del repositorio. Los hallazgos vienen solo de los escáneres: no se verificaron ejecutándolos. Una propuesta de parche, si la pides, tampoco se ejecuta nunca.',
+    },
+    # ---------- patch proposal for one B602 finding (scan_view.proposal_section) ----------
+    "pp_title": {
+        "en": 'Propose a patch with NVIDIA Nemotron (not tested in the application)',
+        "es": 'Proponer un parche con NVIDIA Nemotron (no probado en la aplicación)',
+    },
+    "pp_scope": {
+        "en": 'Only for this finding type (B602: subprocess with shell=True) and only when the command is simple: words and whole values, without pipes, redirections, wildcards or other shell syntax. After you see the exact text and agree, MegaPatch sends it to Nebius Token Factory: this one function, with Bandit\'s message and our instructions; never the rest of the repository, its .env, .git or virtual environments. The answer is put into a disposable copy of this one file and reviewed statically (syntax, Bandit, the diff touches only this function). Nothing is run, so it is never an accepted patch: it is a proposal for a person to review.',
+        "es": 'Solo para este tipo de hallazgo (B602: subprocess con shell=True) y solo si el comando es sencillo: palabras y valores completos, sin tuberías, redirecciones, comodines ni otra sintaxis del shell. Después de que veas el texto exacto y aceptes, MegaPatch lo envía a Nebius Token Factory: esta única función, con el mensaje de Bandit y nuestras instrucciones; nunca el resto del repositorio, su .env, .git ni entornos virtuales. La respuesta se coloca en una copia desechable de este único archivo y se revisa de forma estática (sintaxis, Bandit, que el diff solo toque esta función). No se ejecuta nada, así que nunca es un parche aceptado: es una propuesta para que una persona la revise.',
+    },
+    "pp_path": {
+        "en": 'Folder of the project (only this one file is read)',
+        "es": 'Carpeta del proyecto (solo se lee este archivo)',
+    },
+    "pp_allowed": {
+        "en": 'Allowed folder (optional): a name this file defines at module level, such as BACKUP_SOURCE',
+        "es": 'Carpeta permitida (opcional): un nombre que este archivo define a nivel de módulo, como BACKUP_SOURCE',
+    },
+    "pp_allowed_help": {
+        "en": 'Removing shell=True stops the shell, but a value that names a file can still point anywhere or be read as an option. With an allowed folder, Nemotron is also asked to reject empty, absolute and "-..." values, resolve the path (following links), keep it inside that folder, require an existing file and pass it after "--"; the review checks that structure by reading the code.',
+        "es": 'Quitar shell=True detiene el shell, pero un valor que nombra un archivo todavía puede apuntar a cualquier parte o leerse como una opción. Con una carpeta permitida, también se le pide a Nemotron rechazar valores vacíos, absolutos y que empiecen por "-", resolver la ruta (siguiendo enlaces), mantenerla dentro de esa carpeta, exigir un archivo existente y pasarla después de "--"; la revisión comprueba esa estructura leyendo el código.',
+    },
+    "pp_check_confined": {
+        "en": 'Path kept inside the allowed folder',
+        "es": 'Ruta dentro de la carpeta permitida',
+    },
+    "pp_err_allowed_name": {
+        "en": 'The allowed folder must be a Python name, such as BACKUP_SOURCE.',
+        "es": 'La carpeta permitida debe ser un nombre de Python, como BACKUP_SOURCE.',
+    },
+    "pp_err_allowed_missing": {
+        "en": '{name} is not defined at module level in {file}.',
+        "es": '{name} no está definido a nivel de módulo en {file}.',
+    },
+    "pp_err_allowed_one_value": {
+        "en": 'An allowed folder needs a command with exactly one value; this one has {count}.',
+        "es": 'Una carpeta permitida necesita un comando con exactamente un valor; este tiene {count}.',
+    },
+    "pp_prepare": {
+        "en": 'Show what would be sent',
+        "es": 'Mostrar qué se enviaría',
+    },
+    "pp_sent_title": {
+        "en": 'Exactly what would be sent to Nebius Token Factory (NVIDIA Nemotron)',
+        "es": 'Exactamente lo que se enviaría a Nebius Token Factory (NVIDIA Nemotron)',
+    },
+    "pp_estimate": {
+        "en": '{chars} characters, about {tin} input tokens. Estimated cost, not a bill: about USD {typical} with a typical answer ({tout} output tokens), at most USD {max} ({tmax} output tokens).',
+        "es": '{chars} caracteres, unos {tin} tokens de entrada. Costo estimado, no es una factura: unos USD {typical} con una respuesta típica ({tout} tokens de salida), como máximo USD {max} ({tmax} tokens de salida).',
+    },
+    "pp_no_key": {
+        "en": 'Sending needs NEBIUS_API_KEY in .env (see .env.example).',
+        "es": 'Para enviar se necesita NEBIUS_API_KEY en .env (ver .env.example).',
+    },
+    "pp_consent": {
+        "en": 'I agree to send exactly the text above to Nebius Token Factory, and I am allowed to share it (for the demo, use the synthetic project)',
+        "es": 'Acepto enviar exactamente el texto de arriba a Nebius Token Factory, y tengo permiso para compartirlo (para la demo, usa el proyecto sintético)',
+    },
+    "pp_send": {
+        "en": 'Send and propose a patch',
+        "es": 'Enviar y proponer un parche',
+    },
+    "pp_sending": {
+        "en": 'Waiting for NVIDIA Nemotron ...',
+        "es": 'Esperando a NVIDIA Nemotron ...',
+    },
+    "pp_proposal": {
+        "en": '**Proposal {id}** · {when} UTC · {tokens} tokens',
+        "es": '**Propuesta {id}** · {when} UTC · {tokens} tokens',
+    },
+    "pp_status_reviewed": {
+        "en": '**Proposal, statically reviewed, not tested in the application.** The checks below read the code; nothing was run. A person must review the diff before using it.',
+        "es": '**Propuesta revisada de forma estática, no probada en la aplicación.** Las comprobaciones de abajo leen el código; no se ejecutó nada. Una persona debe revisar el diff antes de usarlo.',
+    },
+    "pp_status_failed": {
+        "en": '**Failed the static review.** It cannot be approved; you can record a rejection.',
+        "es": '**No pasó la revisión estática.** No se puede aprobar; puedes registrar un rechazo.',
+    },
+    "pp_status_file_changed": {
+        "en": '**The file changed while the answer was awaited.** The answer is kept, but it was not reviewed and no diff was made. It cannot be approved; prepare it again.',
+        "es": '**El archivo cambió mientras se esperaba la respuesta.** La respuesta se guarda, pero no se revisó ni se generó un diff. No se puede aprobar; vuelve a prepararla.',
+    },
+    "pp_no_diff": {
+        "en": '(no change)',
+        "es": '(sin cambios)',
+    },
+    "pp_check_syntax": {
+        "en": 'Syntax',
+        "es": 'Sintaxis',
+    },
+    "pp_check_only_function": {
+        "en": 'Only the target function',
+        "es": 'Solo la función objetivo',
+    },
+    "pp_check_no_shell": {
+        "en": 'No shell',
+        "es": 'Sin shell',
+    },
+    "pp_check_same_words": {
+        "en": 'Same command words',
+        "es": 'Mismas palabras del comando',
+    },
+    "pp_check_b602_gone": {
+        "en": 'B602 gone',
+        "es": 'B602 desaparece',
+    },
+    "pp_check_no_new_serious": {
+        "en": 'Nothing new of medium or high severity',
+        "es": 'Nada nuevo de severidad media o alta',
+    },
+    "pp_check_rejects_input": {
+        "en": 'Rejects empty, "-..." and absolute values',
+        "es": 'Rechaza valores vacíos, "-..." y absolutos',
+    },
+    "pp_check_resolves": {
+        "en": 'Resolves the path (links followed)',
+        "es": 'Resuelve la ruta (sigue los enlaces)',
+    },
+    "pp_check_inside": {
+        "en": 'Keeps it inside the allowed folder',
+        "es": 'La mantiene dentro de la carpeta permitida',
+    },
+    "pp_check_is_file": {
+        "en": 'Requires an existing file',
+        "es": 'Exige un archivo existente',
+    },
+    "pp_check_after_dashdash": {
+        "en": 'Passes the checked path after "--"',
+        "es": 'Pasa la ruta comprobada después de "--"',
+    },
+    "pp_check_one_process": {
+        "en": 'No extra process',
+        "es": 'Ningún proceso adicional',
+    },
+    "pp_rereview": {
+        "en": 'Re-review of proposal {id} with the current checks: no new request was sent, and the answer is the one recorded then (that record is unchanged).',
+        "es": 'Nueva revisión de la propuesta {id} con los controles actuales: no se envió ninguna petición nueva y la respuesta es la registrada entonces (ese registro no cambió).',
+    },
+    "pp_observations": {
+        "en": 'Observations (not checks: for the person who reviews it)',
+        "es": 'Observaciones (no son controles: para quien la revise)',
+    },
+    "pp_err_rereview_original": {
+        "en": 'Only a proposal that came from a request can be reviewed again ({id} is itself a re-review).',
+        "es": 'Solo se puede volver a revisar una propuesta que vino de una petición ({id} ya es una nueva revisión).',
+    },
+    "pp_err_rereview_changed": {
+        "en": 'The file, the scan or the request text changed since proposal {id}: it cannot be reviewed again as the same request.',
+        "es": 'El archivo, el escaneo o el texto de la petición cambiaron desde la propuesta {id}: no se puede volver a revisar como la misma petición.',
+    },
+    "pp_approve": {
+        "en": 'Approve and export the diff',
+        "es": 'Aprobar y exportar el diff',
+    },
+    "pp_reject": {
+        "en": 'Reject',
+        "es": 'Rechazar',
+    },
+    "pp_approved": {
+        "en": '**Exported.** Approved {when} UTC by a person at this machine: the diff was exported to `analysis/{project}/{path}`, with exactly the approved text. It is still not tested in the application.',
+        "es": '**Exportada.** Aprobada el {when} UTC por una persona en esta máquina: el diff se exportó a `analysis/{project}/{path}`, con exactamente el texto aprobado. Sigue sin probarse en la aplicación.',
+    },
+    "pp_export_pending": {
+        "en": '**Pending: approved, not exported yet.** Approved {when} UTC by a person at this machine, but the diff is not at `analysis/{project}/{path}` yet (the export stopped or failed). This is not a finished approval. *Retry the export* puts it in place once the source file in the folder above is the version the proposal was made from.',
+        "es": '**Pendiente: aprobada, todavía no exportada.** Aprobada el {when} UTC por una persona en esta máquina, pero el diff todavía no está en `analysis/{project}/{path}` (la exportación se detuvo o falló). No es una aprobación terminada. *Reintentar la exportación* lo coloca cuando el archivo fuente de la carpeta indicada arriba sea la versión a partir de la cual se hizo la propuesta.',
+    },
+    "pp_export_conflict": {
+        "en": '**Conflict: approved, not exported.** Approved {when} UTC, but another file is already at `analysis/{project}/{path}`, and it is never replaced. This is not a finished approval: a person must check that file.',
+        "es": '**Conflicto: aprobada, no exportada.** Aprobada el {when} UTC, pero ya hay otro archivo en `analysis/{project}/{path}`, y nunca se reemplaza. No es una aprobación terminada: una persona debe revisar ese archivo.',
+    },
+    "pp_export_stale": {
+        "en": '**Obsolete (stale): approved, not exported.** Approved {when} UTC, but {file} changed after the approval, so this diff no longer matches it and is not exported. There is nothing to retry: make a new proposal for the current file.',
+        "es": '**Obsoleta: aprobada, no exportada.** Aprobada el {when} UTC, pero {file} cambió después de la aprobación, así que este diff ya no le corresponde y no se exporta. No hay nada que reintentar: haz una propuesta nueva para el archivo actual.',
+    },
+    "pp_retry_needs_folder": {
+        "en": 'The retry stays off until the folder above holds {file} in the exact version the proposal was made from (no folder is given, or the file cannot be read there).',
+        "es": 'El reintento sigue desactivado hasta que la carpeta indicada arriba contenga {file} en la versión exacta a partir de la cual se hizo la propuesta (no se indicó carpeta o el archivo no se puede leer ahí).',
+    },
+    "pp_damaged": {
+        "en": 'These records could not be read (cut off by an interruption, or damaged), so they are not shown: {files}. They are left untouched in `analysis/`.',
+        "es": 'Estos registros no se pudieron leer (cortados por una interrupción, o dañados), así que no se muestran: {files}. Se dejan intactos en `analysis/`.',
+    },
+    "pp_err_export_stale": {
+        "en": '{file} changed after proposal {id} was approved: the approval is obsolete (stale) and its diff is not exported. Make a new proposal for the current file.',
+        "es": '{file} cambió después de aprobarse la propuesta {id}: la aprobación está obsoleta y su diff no se exporta. Haz una propuesta nueva para el archivo actual.',
+    },
+    "pp_err_record_not_saved": {
+        "en": 'The record of proposal {id} could not be saved ({why}): nothing was recorded. If a request was made, logs/usage.jsonl has it.',
+        "es": 'No se pudo guardar el registro de la propuesta {id} ({why}): no se registró nada. Si se hizo una petición, figura en logs/usage.jsonl.',
+    },
+    "pp_err_no_hard_links": {
+        "en": 'This file system does not support hard links (analysis/{project}/), which MegaPatch needs to write each record complete and never replace one: nothing was sent or recorded.',
+        "es": 'Este sistema de archivos no admite enlaces duros (analysis/{project}/), que MegaPatch necesita para escribir cada registro completo y no reemplazar nunca uno: no se envió ni se registró nada.',
+    },
+    "pp_retry_export": {
+        "en": 'Retry the export',
+        "es": 'Reintentar la exportación',
+    },
+    "pp_err_export_pending": {
+        "en": 'The approval of proposal {id} is saved, but its diff could not be put in place ({why}): the export is pending, not finished. Retry it.',
+        "es": 'La aprobación de la propuesta {id} está guardada, pero su diff no se pudo colocar ({why}): la exportación está pendiente, no terminada. Reinténtala.',
+    },
+    "pp_err_export_conflict": {
+        "en": 'Another file is already at `{path}`: it is not replaced, so the approval of proposal {id} is not exported. A person must check that file.',
+        "es": 'Ya hay otro archivo en `{path}`: no se reemplaza, así que la aprobación de la propuesta {id} no se exporta. Una persona debe revisar ese archivo.',
+    },
+    "pp_err_decision_not_saved": {
+        "en": 'The decision on proposal {id} could not be saved ({why}): nothing was decided or exported.',
+        "es": 'No se pudo guardar la decisión sobre la propuesta {id} ({why}): no se decidió ni se exportó nada.',
+    },
+    "pp_err_not_pending": {
+        "en": 'Proposal {id} has no approval to export.',
+        "es": 'La propuesta {id} no tiene una aprobación que exportar.',
+    },
+    "pp_rejected": {
+        "en": 'Rejected {when} UTC by a person at this machine; nothing was exported.',
+        "es": 'Rechazada el {when} UTC por una persona en esta máquina; no se exportó nada.',
+    },
+    "pp_err_not_b602": {
+        "en": 'Only Bandit B602 findings (subprocess with shell=True) can get a proposal.',
+        "es": 'Solo los hallazgos B602 de Bandit (subprocess con shell=True) pueden recibir una propuesta.',
+    },
+    "pp_err_not_found": {
+        "en": '{file} is not in that folder, or is left out of the scan.',
+        "es": '{file} no está en esa carpeta, o está excluido del escaneo.',
+    },
+    "pp_err_stale": {
+        "en": 'The file changed since the scan: Bandit no longer reports B602 at line {line}. Scan again.',
+        "es": 'El archivo cambió desde el escaneo: Bandit ya no reporta B602 en la línea {line}. Vuelve a escanear.',
+    },
+    "pp_err_no_function": {
+        "en": 'Line {line} is not inside a function.',
+        "es": 'La línea {line} no está dentro de una función.',
+    },
+    "pp_err_no_call": {
+        "en": 'No subprocess call with shell=True was found at line {line}.',
+        "es": 'No se encontró una llamada a subprocess con shell=True en la línea {line}.',
+    },
+    "pp_err_not_simple": {
+        "en": 'Not compatible: not a simple command ({why}). No proposal is made, because an argument list could change what the command does.',
+        "es": 'No compatible: no es un comando sencillo ({why}). No se hace ninguna propuesta, porque una lista de argumentos podría cambiar lo que hace el comando.',
+    },
+    "pp_err_sensitive": {
+        "en": 'Blocked: the text to send looks like it holds {kinds} (line {lines} of the function). Nothing is sent.',
+        "es": 'Bloqueado: el texto a enviar parece contener {kinds} (línea {lines} de la función). No se envía nada.',
+    },
+    "pp_err_no_consent": {
+        "en": 'Nothing is sent without your explicit consent.',
+        "es": 'No se envía nada sin tu consentimiento explícito.',
+    },
+    "pp_err_no_key": {
+        "en": 'NEBIUS_API_KEY is not set in .env.',
+        "es": 'NEBIUS_API_KEY no está configurada en .env.',
+    },
+    "pp_err_not_reviewable": {
+        "en": 'Only a proposal that passed the static review can be approved.',
+        "es": 'Solo se puede aprobar una propuesta que pasó la revisión estática.',
+    },
+    "pp_err_decided": {
+        "en": 'This proposal already has a decision.',
+        "es": 'Esta propuesta ya tiene una decisión.',
+    },
+    "pp_err_file_changed": {
+        "en": '{file} changed since the text to send was prepared: nothing was sent and no diff was made. Click "Show what would be sent" again.',
+        "es": '{file} cambió desde que se preparó el texto a enviar: no se envió nada ni se generó un diff. Vuelve a pulsar «Mostrar qué se enviaría».',
+    },
+    "pp_err_export_changed": {
+        "en": '{file} in that folder is not the exact version proposal {id} was made from (it changed, cannot be read, or the proposal does not record its version): nothing was exported or decided.',
+        "es": '{file} en esa carpeta no es la versión exacta a partir de la cual se hizo la propuesta {id} (cambió, no se puede leer o la propuesta no registra su versión): no se exportó ni se decidió nada.',
+    },
+    "pp_err_exported_exists": {
+        "en": 'A diff of proposal {id} already exists (`{path}`): nothing was exported or decided.',
+        "es": 'Ya existe un diff de la propuesta {id} (`{path}`): no se exportó ni se decidió nada.',
     },
     "live_title": {
         "en": 'Analyze one finding of the practice app (local)',
@@ -719,12 +1038,15 @@ TEXT = {
     },
     "limits_caption": {
         "en": "Recorded runs on our own practice app, not real-world code. The PoCs call the app in-process (Flask's "
-              "test client) inside the sandbox, whose outbound network is not blocked. \"Accepted by the judge\" "
+              "test client) inside the sandbox. On 2026-10-10 one outbound TCP connection from the sandbox to "
+              "pypi.org:443 succeeded, which does not establish the full extent of its network access. \"Accepted "
+              "by the judge\" "
               "means the same PoC and the functional tests passed, not \"safe in production\". The *Walkthrough* tab "
               "follows one finding through all five steps.",
         "es": "Corridas grabadas sobre nuestra propia app de práctica, no sobre código real. Los PoC llaman a la app "
-              "en el mismo proceso (con el cliente de pruebas de Flask), dentro del sandbox, cuya red de salida no "
-              "está bloqueada. \"Aceptado por el juez\" significa que el mismo PoC y las pruebas funcionales pasaron, "
+              "en el mismo proceso (con el cliente de pruebas de Flask), dentro del sandbox. El 2026-10-10 se observó "
+              "una conexión TCP exitosa desde el sandbox a pypi.org:443, lo cual no determina el alcance completo de "
+              "su red. \"Aceptado por el juez\" significa que el mismo PoC y las pruebas funcionales pasaron, "
               "no \"seguro en producción\". La pestaña *Recorrido* sigue un hallazgo por los cinco pasos.",
     },
     "limits_title": {"en": "What you are looking at, and what it does not show",
@@ -741,8 +1063,9 @@ TEXT = {
 - **Verifiable by execution:** three vulnerability classes, only in our own practice app. Everything else is
   ranked and reported as not verifiable, never as safe.
 - **The PoCs run in-process** inside the sandbox; they do not test network reachability.
-- **Isolation means no secrets and not our machine:** the sandbox's outbound network is not blocked and code runs
-  as root inside it.
+- **Isolation means no secrets and not our machine:** on 2026-10-10 one outbound TCP connection from the sandbox
+  to pypi.org:443 succeeded, which does not establish the full extent of its network access; code runs as root
+  inside it.
 - **Approval:** runs made with `--yes` skipped every human approval question. Each run's banner says which kind it
   is, read from its own data.
 - **Not measured:** there is no precision figure for the ranking.
@@ -758,8 +1081,9 @@ TEXT = {
 - **Verificable por ejecución:** tres clases de vulnerabilidad, solo en nuestra propia app de práctica. Todo lo
   demás se ordena y se reporta como no verificable, nunca como seguro.
 - **Los PoC se ejecutan dentro del proceso** en el sandbox; no prueban si la app es alcanzable por la red.
-- **Aislamiento significa sin secretos y no es nuestra máquina:** la red de salida del sandbox no está bloqueada y
-  el código se ejecuta como root dentro de él.
+- **Aislamiento significa sin secretos y no es nuestra máquina:** el 2026-10-10 se observó una conexión TCP exitosa
+  desde el sandbox a pypi.org:443, lo cual no determina el alcance completo de su red; el código se ejecuta como
+  root dentro de él.
 - **Aprobación:** las corridas hechas con `--yes` omitieron todas las preguntas de aprobación humana. El aviso de
   cada corrida dice de qué tipo es, leído de sus propios datos.
 - **No medido:** no hay una cifra de precisión para el orden.
@@ -1004,13 +1328,15 @@ TEXT = {
     "download": {"en": "Download this patch (.diff)", "es": "Descargar este parche (.diff)"},
     # ---------- public evidence ----------
     "evidence_intro": {
-        "en": "What execution cannot verify (no PoC for that class) is backed with **public evidence**: Tavily "
-              "searches the web at runtime and Nemotron summarizes only what the sources support. This never "
+        "en": "What execution cannot verify (no PoC for that class) can be backed with **public evidence**: in a "
+              "run started with `--enrich`, Tavily searches the web and Nemotron summarizes only what the sources "
+              "support. This never "
               "changes the ScoreRisk number. Web results and summaries can differ between runs, which is exactly why "
               "this evidence is shown next to the score and never inside it.",
-        "es": "Lo que la ejecución no puede verificar (no hay PoC para esa clase) se respalda con **evidencia "
-              "pública**: Tavily busca en la web durante la corrida y Nemotron resume solo lo que las fuentes "
-              "sostienen. Esto nunca cambia el número de ScoreRisk. Los resultados web y los resúmenes pueden cambiar "
+        "es": "Lo que la ejecución no puede verificar (no hay PoC para esa clase) se puede respaldar con "
+              "**evidencia pública**: en una corrida iniciada con `--enrich`, Tavily busca en la web y Nemotron resume "
+              "solo lo que las fuentes sostienen. Esto nunca cambia el número de ScoreRisk. Los resultados web y los "
+              "resúmenes pueden cambiar "
               "entre corridas, y por eso esta evidencia se muestra junto al puntaje y nunca dentro de él.",
     },
     "evidence_recorded_note": {
@@ -1018,9 +1344,8 @@ TEXT = {
         "es": "Los resúmenes y las fuentes se muestran tal como quedaron registrados en la corrida, en inglés.",
     },
     "no_enrichment": {
-        "en": "This run has no public-evidence step. Set TAVILY_API_KEY and run `python megapatch.py`.",
-        "es": "Esta corrida no tiene el paso de evidencia pública. Configura TAVILY_API_KEY y ejecuta "
-              "`python megapatch.py`.",
+        "en": 'This run has no public-evidence step. It is off unless asked for: set TAVILY_API_KEY and run `python megapatch.py --enrich` (a key alone does not turn it on).',
+        "es": 'Esta corrida no tiene el paso de evidencia pública. Está desactivado salvo que se pida: configura TAVILY_API_KEY y ejecuta `python megapatch.py --enrich` (la clave sola no lo activa).',
     },
     "skipped": {"en": "Skipped: {why}", "es": "Omitido: {why}"},
     "ev_exploited": {"en": "Exploited in the wild", "es": "Explotado activamente"},
@@ -1108,42 +1433,47 @@ confiable como sus entradas, y la exposición de los activos está declarada en 
     },
     # ---------- reproduce ----------
     "repro_intro": {
-        "en": "Verify the red to green claim yourself, with no API keys (the network is only needed to install the "
+        "en": "Check it yourself, with no API keys: the exploits fire on the practice app and not on our hand-written "
+              "reference fix, and the recorded runs match this repository (the network is only needed to install the "
               "packages):",
-        "es": "Comprueba por tu cuenta la afirmación de rojo a verde, sin claves de API (la red solo se necesita "
-              "para instalar los paquetes):",
+        "es": "Compruébalo por tu cuenta, sin claves de API: los exploits funcionan sobre la app de práctica y no sobre "
+              "nuestro arreglo de referencia escrito a mano, y las corridas grabadas cuadran con este repositorio (la "
+              "red solo se necesita para instalar los paquetes):",
     },
-    "repro_full": {"en": "Run the whole pipeline (needs Nebius Token Factory credentials and Sandboxes access):",
-                   "es": "Ejecuta el pipeline completo (necesita credenciales de Nebius Token Factory y acceso a "
-                         "Sandboxes):"},
+    "repro_full": {"en": "Run the pipeline (needs Nebius Token Factory credentials and Sandboxes access; it stops at "
+                         "Nemotron's patch proposal, which it does not run):",
+                   "es": "Ejecuta el pipeline (necesita credenciales de Nebius Token Factory y acceso a Sandboxes; se "
+                         "detiene en la propuesta de parche de Nemotron, que no ejecuta):"},
     "repro_services": {
-        "en": "**Runtime services:** NVIDIA Nemotron 3 Super through Nebius Token Factory writes the patches; "
-              "Nebius Token Factory Sandboxes run every exploit, test and model-written patch in isolation. Live "
-              "execution is not exposed in this public page, to protect the credits behind it.",
-        "es": "**Servicios en ejecución:** NVIDIA Nemotron 3 Super, a través de Nebius Token Factory, escribe los "
-              "parches; los Sandboxes de Nebius Token Factory ejecutan cada exploit, cada prueba y cada parche escrito "
-              "por el modelo de forma aislada. La ejecución en vivo no está disponible en esta página pública, para "
-              "proteger los créditos que la pagan.",
+        "en": "**Runtime services:** NVIDIA Nemotron 3 Super through Nebius Token Factory writes the patch "
+              "proposals; Nebius Token Factory Sandboxes run our exploits and tests on the practice app. In this "
+              "version no model-written patch is run there; in the recorded runs it was, in the same kind of sandbox "
+              "where `isolation_check.py` saw one outbound TCP connection to `pypi.org:443` succeed on 2026-10-10, "
+              "which does not establish the full extent of its network access. "
+              "Live execution is not exposed in this public page, to protect the credits behind it.",
+        "es": "**Servicios en ejecución:** NVIDIA Nemotron 3 Super, a través de Nebius Token Factory, escribe las "
+              "propuestas de parche; los Sandboxes de Nebius Token Factory ejecutan nuestros exploits y pruebas sobre "
+              "la app de práctica. En esta versión no se ejecuta ahí ningún parche escrito por el modelo; en las "
+              "corridas grabadas sí, en el mismo tipo de sandbox donde `isolation_check.py` observó el 2026-10-10 una "
+              "conexión TCP exitosa a `pypi.org:443`, lo cual no determina el alcance completo de su red. La ejecución "
+              "en vivo no está disponible en esta "
+              "página pública, para proteger los créditos que la pagan.",
     },
     "isolation_title": {"en": "What the sandbox can see (observed, not promised)",
                         "es": "Qué puede ver el sandbox (observado, no prometido)"},
     "isolation_caption": {
-        "en": "Recorded {date} by `isolation_check.py`, inside the same sandbox the judge uses. Network egress is "
-              "not blocked and code runs as root inside the VM; isolation here means nothing sensitive is placed "
-              "in it.",
-        "es": "Registrado el {date} por `isolation_check.py`, dentro del mismo sandbox que usa el juez. La salida de "
-              "red no está bloqueada y el código se ejecuta como root dentro de la VM; aislamiento aquí significa "
-              "que no se pone nada sensible dentro.",
+        "en": "Recorded {date} by `isolation_check.py`, inside the same sandbox the judge uses. One outbound TCP "
+              "connection to pypi.org:443 succeeded, which does not establish the full extent of its network "
+              "access; code runs as root inside the VM; isolation here means nothing sensitive is placed in it.",
+        "es": "Registrado el {date} por `isolation_check.py`, dentro del mismo sandbox que usa el juez. Una conexión TCP "
+              "de salida a pypi.org:443 tuvo éxito, lo cual no determina el alcance completo de su red; el código se "
+              "ejecuta como root dentro de la VM; aislamiento aquí significa que no se pone nada sensible dentro.",
     },
     "empty": {"en": "(empty)", "es": "(vacío)"},
     # ---------- analyze (local) ----------
     "live_intro": {
-        "en": "Run the loop on **one** finding from this page: confirm it with the exploit, let Nemotron write a "
-              "patch, judge it with the **same** exploit and the tests, and decide whether to export it. Nothing is "
-              "exported until you approve.",
-        "es": "Ejecuta el ciclo sobre **un** hallazgo desde esta página: confírmalo con el exploit, deja que Nemotron "
-              "escriba un parche, júzgalo con el **mismo** exploit y las pruebas, y decide si exportarlo. No se "
-              "exporta nada hasta que lo apruebes.",
+        "en": 'Run the loop on **one** finding from this page: confirm it with the exploit on the practice app, and let Nemotron write a patch. For now the patch is **not run** (no environment here is proven to block outbound network), so it is shown as a proposal, not executed and not verified, and nothing can be exported.',
+        "es": 'Ejecuta el ciclo sobre **un** hallazgo desde esta página: confírmalo con el exploit sobre la app de práctica y deja que Nemotron escriba un parche. Por ahora el parche **no se ejecuta** (ningún entorno de aquí demuestra que bloquea la red de salida), así que se muestra como una propuesta, no ejecutada y no verificada, y no se puede exportar nada.',
     },
     "live_independent": {
         "en": "This tab is independent of the recorded run selected in the sidebar: it makes a new analysis of one "
@@ -1152,13 +1482,8 @@ confiable como sus entradas, y la exposición de los activos está declarada en 
               "nuevo de un hallazgo.",
     },
     "live_trust": {
-        "en": "Read this before trusting a result: the PoCs call the app in-process (Flask's test client), not over "
-              "HTTP; the sandbox's outbound network is not blocked; and the judge only covers what its PoCs and "
-              "tests cover, so 'accepted by the judge' does not mean 'safe in production'.",
-        "es": "Lee esto antes de confiar en un resultado: los PoC llaman a la app en el mismo proceso (con el cliente "
-              "de pruebas de Flask), no por HTTP; la red de salida del sandbox no está bloqueada; y el juez solo "
-              "cubre lo que cubren sus PoC y sus pruebas, así que 'aceptado por el juez' no significa 'seguro en "
-              "producción'.",
+        "en": "Read this before trusting a result: the PoCs call the practice app in-process (Flask's test client), not over HTTP, and never a URL or an IP address; the sandbox is not proven to block outbound network (on 2026-10-10 one outbound TCP connection from it to pypi.org:443 succeeded, which does not establish the full extent of its network access), which is why model-written code is not run; and a proposal that was not run says nothing about whether it fixes the vulnerability.",
+        "es": 'Lee esto antes de confiar en un resultado: los PoC llaman a la app de práctica en el mismo proceso (con el cliente de pruebas de Flask), no por HTTP, y nunca a una URL ni a una dirección IP; no está demostrado que el sandbox bloquee la red de salida (el 2026-10-10 se observó desde él una conexión TCP exitosa a pypi.org:443, lo cual no determina el alcance completo de su red), y por eso no se ejecuta el código que escribe el modelo; y una propuesta que no se ejecutó no dice nada sobre si corrige la vulnerabilidad.',
     },
     "live_off": {
         "en": "**Live runs are off here.** They spend model and sandbox credits, so they are a local opt-in: set "
@@ -1178,6 +1503,10 @@ confiable como sus entradas, y la exposición de los activos está declarada en 
                            "es": "Análisis terminado: esperando tu decisión"},
     "live_done_rejected": {"en": "Analysis finished: the judge did not accept the patch",
                            "es": "Análisis terminado: el juez no aceptó el parche"},
+    "live_done_not_run": {
+        "en": 'Analysis finished: a patch proposal, not executed and not verified',
+        "es": 'Análisis terminado: una propuesta de parche, no ejecutada y no verificada',
+    },
     "live_not_confirmed": {"en": "The exploit did not fire: nothing to fix",
                            "es": "El exploit no funcionó: no hay nada que arreglar"},
     "live_error": {"en": "The analysis stopped with an error", "es": "El análisis se detuvo con un error"},
@@ -1202,6 +1531,14 @@ confiable como sus entradas, y la exposición de los activos está declarada en 
     "live_reject": {"en": "Reject (export nothing)", "es": "Rechazar (no exportar nada)"},
     "live_no_patch": {"en": "There is no patch to approve. Nothing was exported.",
                       "es": "No hay un parche que aprobar. No se exportó nada."},
+    "live_not_run": {
+        "en": '**Not executed, not verified.** The patch was not run: no environment here is proven to block outbound network, so model-written code runs nowhere. The exploit and the tests never ran against it.',
+        "es": '**No ejecutado, no verificado.** El parche no se ejecutó: ningún entorno de aquí demuestra que bloquea la red de salida, así que el código que escribe el modelo no se ejecuta en ninguna parte. El exploit y las pruebas nunca se ejecutaron contra él.',
+    },
+    "live_not_run_no_export": {
+        "en": 'A proposal for a person to read, not a fix: there is no judge verdict, so it cannot be approved or exported.',
+        "es": 'Una propuesta para que la lea una persona, no una corrección: no hay veredicto del juez, así que no se puede aprobar ni exportar.',
+    },
     "live_save_record": {"en": "Save a record of this analysis (exports nothing)",
                          "es": "Guardar un registro de este análisis (no exporta nada)"},
     "live_starting": {"en": "starting...", "es": "iniciando..."},
@@ -1216,6 +1553,10 @@ confiable como sus entradas, y la exposición de los activos está declarada en 
     "stage_generate": {"en": "Ask Nemotron for a patch (attempt {n})", "es": "Pedir un parche a Nemotron (intento {n})"},
     "stage_judge": {"en": "Judge it in the sandbox: the same {poc} and the functional tests",
                     "es": "Juzgarlo en el sandbox: el mismo {poc} y las pruebas funcionales"},
+    "stage_not_run": {
+        "en": 'Not run: a proposal, not executed and not verified',
+        "es": 'No se ejecuta: una propuesta, no ejecutada y no verificada',
+    },
     "stage_approval": {"en": "Waiting for a person to approve the export",
                        "es": "Esperando que una persona apruebe la exportación"},
     # ---------- statuses in the queue ----------
@@ -1263,6 +1604,7 @@ QUICKSTART_STEPS = ("qs_install", "qs_scan", "qs_assets", "qs_rank", "qs_analyze
 DATA_LABELS_ES = {
     # reasons recorded by repo_scan.py: requirement lines it does not audit, folders it leaves out
     "not pinned with ==": "no fijada con ==",
+    "dependency check off (it asks PyPI; not requested)": "comprobación de dependencias desactivada (consulta a PyPI; no se pidió)",
     "option line, not followed": "línea de opción, no se sigue",
     'version control': 'control de versiones',
     'environment folder (may hold secrets)': 'carpeta de entorno (puede contener secretos)',
@@ -1384,6 +1726,8 @@ def stage_label(stage, poc, lang):
         return tr(lang, "stage_generate", n=key.split("_", 1)[1])
     if key.startswith("judge_"):
         return tr(lang, "stage_judge", poc=poc)
+    if key.startswith("not_run_"):
+        return tr(lang, "stage_not_run")
     if key == "approval":
         return tr(lang, "stage_approval")
     return stage.get("label", key)

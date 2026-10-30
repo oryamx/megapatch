@@ -24,6 +24,7 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 from pathlib import Path
 
+import execution_policy as policy
 from catalog import CLASSES, judge_files, judge_fingerprint
 from evidence_utils import lf_sha as sha
 from judge import is_accepted
@@ -114,6 +115,9 @@ def main():
     parser.add_argument("--runs", nargs="*", default=DEFAULT_RUNS)
     parser.add_argument("--force", action="store_true", help="overwrite an existing record for this judge version")
     args = parser.parse_args()
+    if not policy.candidates_may_run():  # its only job is to run recorded model-written patches
+        raise SystemExit(f"rejudge.py runs nothing for now: {policy.REASON}. The existing re-judge record is kept "
+                         "as it is (judge_check.py still verifies it).")
 
     fingerprint = judge_fingerprint()
     out = Path("evidence") / f"rejudge_{fingerprint}.json"

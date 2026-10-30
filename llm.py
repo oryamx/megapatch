@@ -9,10 +9,13 @@ import time
 from datetime import datetime, timezone
 from pathlib import Path
 
-from dotenv import load_dotenv
-from openai import APIStatusError, OpenAI
+try:
+    from dotenv import load_dotenv
+except ImportError:  # the lean install (requirements.txt): prices and the usage log still work, chat() does not
+    load_dotenv = None
 
-load_dotenv()
+if load_dotenv:
+    load_dotenv()
 
 BASE_URL = os.getenv("NEBIUS_BASE_URL", "https://api.tokenfactory.nebius.com/v1/")
 MODEL = os.getenv("NEBIUS_MODEL", "nvidia/nemotron-3-super-120b-a12b")
@@ -33,6 +36,8 @@ def usage_lines():
 
 def chat(purpose, messages, **kwargs):
     """Call Nemotron and log the usage. `purpose` groups calls in the report."""
+    from openai import APIStatusError, OpenAI  # requirements-pipeline.txt
+
     api_key = os.getenv("NEBIUS_API_KEY")
     if not api_key:
         raise SystemExit("Missing NEBIUS_API_KEY. Copy .env.example to .env and paste your key.")

@@ -2,11 +2,13 @@
 (local)" tab) is read-only, keeps the file and line of every finding, never overwrites an analysis, never
 touches the demo, and ranks without made-up numbers.
 
-Offline: pip-audit is replaced by a fake runner that returns canned JSON and records every command, and the
-threat-data download is replaced too. No network is used. Bandit really runs on the sample repository when it
-is installed (it only parses the code); otherwise a canned report stands in. The sample repository has a .git
-repository, a .env with a FAKE secret, two virtual environments with unsafe code, and a setup.py, a package and
-a test that leave a marker file if anything ever runs or imports them.
+By default a scan is local only (Bandit; no pip-audit, no threat data, git not run): checked first. The opt-ins
+are checked with fakes: pip-audit is replaced by a fake runner that returns canned JSON and records every command,
+and the threat-data download is replaced too. No network is used: any attempt to reach another host fails at once
+(no_network), in this process and in the dashboard's child, and fails the check. Bandit really runs on the
+sample repository when it is installed (it only parses the code); otherwise a canned report stands in. The
+sample repository has a .git repository, a .env with a FAKE secret, two virtual environments with unsafe code,
+and a setup.py, a package and a test that leave a marker file if anything ever runs or imports them.
 
 Usage: python check_repo_scan.py   (judge_check.py runs it too)
 """
@@ -20,11 +22,13 @@ import sys
 import tempfile
 from pathlib import Path
 
+import no_network
 import repo_scan
 from scorerisk import fingerprint
 
 HERE = Path(__file__).resolve().parent
 results = []
+skipped_parts = []  # parts that could not run here: the check then ends INCOMPLETE (exit code 2), never ALL PASSED
 SECRETS = ("FAKE-env-secret-0000", "FAKE-index-token", "FAKE-hunter2", "FAKE-query-token", "FAKE-signature",
            "FAKE-fragment-token", "FAKE-userinfo-token", "FAKE-option-token", "FAKE-envpy-secret")
 
@@ -162,6 +166,8 @@ QUIET = {"progress": lambda step, **info: None}
 
 RENDER_CHILD = r"""
 import json, os, sys
+import no_network
+no_network.install()
 from streamlit import config
 from streamlit.testing.v1 import AppTest
 out = {}
@@ -190,12 +196,15 @@ for case, argv, address in (("off", ["dashboard.py"], None), ("unbound", ["dashb
         "inputs": [i.label for i in at.text_input],
         "infos": [i.value for i in at.info], "successes": [s.value for s in at.success],
         "warnings": [w.value for w in at.warning],
+        "checkboxes": [(c.label, c.value) for c in at.checkbox],
     }
+out["network_attempts"] = no_network.ATTEMPTS
 print("RS-JSON:" + json.dumps(out))
 """
 
 
 def main():
+    no_network.install()
     demo_before, fingerprint_before = demo_snapshot(), fingerprint()
     with tempfile.TemporaryDirectory() as tmp:
         tmp = Path(tmp)
@@ -272,13 +281,50 @@ def main():
             refused = exc.key == "scanners"
         check("scanners: a scan refuses versions other than the ones requirements-scan.txt pins, before writing anything",
               refused and not root.exists(), f"(pins: {PINNED})")
-        try:
-            repo_scan.scan(tmp, root=root, runner=FakeRunner(repo), installed=PINNED, **QUIET)
+        def no_fetch(*args, **kwargs):
+            raise AssertionError("threat data was requested although the scan did not ask for it")
+
+        try:  # local only, even if the refusal ever broke: no threat data, no dependency check
+            repo_scan.scan(tmp, root=root, runner=FakeRunner(repo), installed=PINNED, threat_data=False,
+                           audit_dependencies=False, fetch=no_fetch, **QUIET)
             refused = False
         except repo_scan.ScanError as exc:
             refused = exc.key == "contains_analysis"
         check("a folder that contains MegaPatch's results folder is refused (scanning it would change it)",
               refused and not root.exists())
+
+        # The default: local only. Bandit alone runs; pip-audit is neither run nor needed; nothing is downloaded;
+        # git is not run on the analyzed repository; each pinned line is listed as not audited.
+        offline_root, offline_runner = tmp / "analysis_offline", FakeRunner(repo)
+        local = repo_scan.scan(repo, "local", runner=offline_runner, fetch=no_fetch, root=offline_root,
+                               installed={"bandit": PINNED["bandit"], "pip-audit": None}, **QUIET)
+        lmeta = local["meta"]
+        off = [n for n in lmeta["not_audited"] if n["reason"] == "dependency check off (it asks PyPI; not requested)"]
+        check("by default the scan is local only: Bandit alone runs, pip-audit is neither run nor needed, no threat "
+              "data is downloaded, nothing is queried outside, and each pinned line is listed as not audited",
+              [c[2] for c in offline_runner.commands] == ["bandit"] and lmeta["external"] == []
+              and lmeta["dependency_audit"] == {"ran": False, "service": None}
+              and lmeta["threat_data"]["downloaded"] is False and local["findings"]["dependencies"] == []
+              and sorted(n["text"] for n in off) == ["Jinja2==2.11.2", "PyYAML==5.3.1", "requests==2.25.0",
+                                                     "urllib3==1.26.4"]
+              and [(n["file"], n["line"]) for n in off if n["text"] == "urllib3==1.26.4"]
+              == [("requirements-dev.txt", 1)]
+              and not (local["folder"] / "pip_audit.json").exists(), f"({[c[2] for c in offline_runner.commands]})")
+        head = subprocess.run(["git", "-C", str(repo), "rev-parse", "--short", "HEAD"],  # the check's own repository
+                              capture_output=True, text=True).stdout.strip()
+        check("the commit is read from the .git files: git is never run on the analyzed repository",
+              bool(head) and lmeta["commit"] == head[:7] and repo_scan.read_commit(tmp) is None
+              and "rev-parse" not in Path(repo_scan.__file__).read_text(encoding="utf-8")
+              and all(c[:2] == [sys.executable, "-m"] for c in offline_runner.commands), f"({lmeta['commit']}, {head})")
+        audit_runner = FakeRunner(repo)
+        audited = repo_scan.scan(repo, "audited", runner=audit_runner, fetch=no_fetch, root=offline_root,
+                                 installed=PINNED, audit_dependencies=True, **QUIET)
+        check("asked for the dependency check only: pip-audit runs (a fake standing in for PyPI), no threat data is "
+              "downloaded, and only PyPI is listed as queried",
+              sorted(c[2] for c in audit_runner.commands) == ["bandit", "pip_audit"]
+              and [e["service"] for e in audited["meta"]["external"]] == ["pypi"]
+              and audited["meta"]["threat_data"]["downloaded"] is False
+              and len(audited["findings"]["dependencies"]) == 5)
 
         runner, fetched = FakeRunner(repo), []
 
@@ -286,7 +332,8 @@ def main():
             fetched.append((sorted(cves), Path(out), with_cwe))
             Path(out).write_text(json.dumps(THREAT), encoding="utf-8")
 
-        first = repo_scan.scan(repo, "sample", runner=runner, fetch=fake_fetch, root=root, installed=PINNED, **QUIET)
+        first = repo_scan.scan(repo, "sample", runner=runner, fetch=fake_fetch, root=root, installed=PINNED,
+                               audit_dependencies=True, threat_data=True, **QUIET)
         meta, folder = first["meta"], first["folder"]
         audit = next(c for c in runner.commands if c[2] == "pip_audit")
         bandit = next(c for c in runner.commands if c[2] == "bandit")
@@ -405,6 +452,7 @@ def main():
                   and not any(f.startswith((".venv", "myenv", ".env")) for _, f, _ in lines)
                   and not any(m.exists() for m in markers) and tree_hashes(repo) == repo_before, f"({lines})")
         else:
+            skipped_parts.append("the real-Bandit case (Bandit is not installed: pip install -r requirements-scan.txt)")
             print("[SKIP] Bandit is not installed here (pip install -r requirements-scan.txt to include it)")
 
         # The dashboard shows the scans, read-only without the local scan mode, from a temporary copy of the project.
@@ -458,11 +506,25 @@ def main():
         check("dashboard: no credential is shown, even from a scan saved unmasked by an earlier version",
               all(case and not case.get("secrets_shown") for case in (off, on, *refused)),
               f"({[c.get('secrets_shown') for c in (off, on, *refused)]})")
+        boxes = dict(map(tuple, on.get("checkboxes", [])))
+        check("dashboard: the dependency check (PyPI) and the threat data are two boxes, both unticked by default",
+              boxes.get("Check the pinned dependencies with PyPI (sends each package's name and version)") is False
+              and boxes.get("Also download public threat data for the CVEs found (sends the CVE ids)") is False,
+              f"({boxes})")
+        child_attempts = shown.get("network_attempts")
 
     check("the demo's scans/, data/, evidence/ and out/ and its ranking fingerprint are unchanged",
           demo_snapshot() == demo_before and fingerprint() == fingerprint_before)
-    print("\nCHECK-REPO-SCAN:", "ALL PASSED" if results and all(results) else "FAILED")
-    sys.exit(0 if results and all(results) else 1)
+    check("no check tried to reach another host (this process and the dashboard's child)",
+          not no_network.ATTEMPTS and child_attempts == [], f"({no_network.ATTEMPTS}, {child_attempts})")
+    if not results or not all(results):
+        print("\nCHECK-REPO-SCAN: FAILED")
+        sys.exit(1)
+    if skipped_parts:  # a part did not run: never reported as passed
+        print(f"\nCHECK-REPO-SCAN: INCOMPLETE (skipped: {'; '.join(skipped_parts)})")
+        sys.exit(2)
+    print("\nCHECK-REPO-SCAN: ALL PASSED")
+    sys.exit(0)
 
 
 if __name__ == "__main__":

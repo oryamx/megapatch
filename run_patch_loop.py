@@ -1,8 +1,12 @@
 """Patch loop: Nemotron writes a patch, then the SAME PoC and tests judge it.
 
-Where the human sits:
-- Sandbox (default): model-written code runs only inside the isolated Nebius sandbox,
-  which holds no secrets and touches nothing real, so it runs automatically. A human
+For now the candidate is NOT run, anywhere (execution_policy.py): no environment here is proven to block
+outbound network, so model-written code is a proposal, "not executed and not verified". It is printed as a
+diff and recorded; it is never judged, never accepted and never exported. The PoC still runs against the
+bundled practice app (target_app/) to confirm the vulnerability: that is code written by hand, not by a model.
+
+How it worked, and will work again once isolation is proven:
+- Sandbox (default): model-written code runs only inside the Nebius sandbox, which holds no secrets. A human
   approves the patch the judge accepted before it is exported (the real effect).
 - --local: the judge runs on this machine, so a human approves BEFORE it runs.
 - --yes skips every question (development only; the evidence labels it).
@@ -16,8 +20,9 @@ Usage:
   python run_patch_loop.py --eval-only      skip the model, judge the existing candidate
   python run_patch_loop.py --local          judge on this machine instead (no sandbox credentials needed)
 
-The model can propose; only the PoC + tests decide ("the score proposes,
-execution disposes"). megapatch.py reuses these functions.
+In the recorded runs, the model proposed and the same PoC + tests judged each patch.
+In this version the patch is not run, so nothing judges it (execution_policy.py).
+megapatch.py reuses these functions.
 """
 import argparse
 import difflib
@@ -26,6 +31,7 @@ import sys
 import time
 from pathlib import Path
 
+import execution_policy as policy
 from catalog import CLASSES
 from judge import is_accepted, judge_local  # the acceptance rule and the local executor live in judge.py
 from llm import chat
@@ -160,6 +166,12 @@ def patch_cycle(judge, where, cwe, evidence, auto_yes=False, generate=True, prep
         print(f"\n=== PROPOSED PATCH, attempt {attempt} (diff) ===")
         print(diff)
 
+        if not policy.candidates_may_run():  # in the sandbox and with --local alike
+            print(f"NOT RUN: {policy.NOT_RUN} ({policy.REASON}).")
+            attempts.append({"attempt": attempt, "approved": False, "accepted": False, "executed": False,
+                             "diff": diff, "not_run": policy.REASON})
+            break
+
         if not sandboxed and not auto_yes:
             # Model-written code is about to run on THIS machine: a human looks first.
             ok, waited = ask(f"Run this candidate against the PoC and tests on {where}? [y/N] ")
@@ -211,7 +223,9 @@ def patch_cycle(judge, where, cwe, evidence, auto_yes=False, generate=True, prep
         else:
             print("Not exported. The judge-accepted patch stays in the evidence only.")
 
-    if auto_yes:
+    if last.get("executed") is False:
+        approval = f"none ({policy.NOT_RUN}: nothing was run, so there was nothing to approve)"
+    elif auto_yes:
         approval = "auto (--yes)"
     elif sandboxed:
         approval = "human, on the judge-accepted patch (the sandbox ran it automatically)"

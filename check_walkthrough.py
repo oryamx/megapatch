@@ -212,8 +212,10 @@ def main():
           all(cmd in b["codes"] for cmd in QUICKSTART_COMMANDS.values()))
 
     captions = " ".join(b["captions"])
-    check("limits are visible without opening anything: in-process PoCs, open outbound network, 'accepted' is not 'safe'",
-          "in-process" in captions and "outbound network is not blocked" in captions
+    check("limits are visible without opening anything: in-process PoCs, the one TCP connection observed to "
+          "pypi.org:443 (not the full extent of the network), 'accepted' is not 'safe'",
+          "in-process" in captions and "pypi.org:443 succeeded" in captions
+          and "does not establish the full extent of its network access" in captions
           and "not \"safe in production\"" in captions)
     expander_text = " ".join(m for m in b["markdown"] if "Declared, not discovered" in m)
     check("the limits panel states the declared inventory, --yes runs and the missing precision figure",

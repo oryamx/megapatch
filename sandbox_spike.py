@@ -14,6 +14,8 @@ load_dotenv()  # contree_sdk reads NEBIUS_API_KEY / NEBIUS_PROJECT_ID from the e
 
 from contree_sdk import ContreeSync  # noqa: E402
 
+import execution_policy as policy  # noqa: E402
+
 BASE_IMAGE = "python:3.12-slim"
 WORK = "/work"
 CANDIDATE = Path("candidates/candidate_1/app.py")
@@ -25,7 +27,7 @@ FILES = {
     f"{WORK}/test_target_app.py": "test_target_app.py",
     f"{WORK}/target_app/app.py": "target_app/app.py",
 }
-if CANDIDATE.exists():
+if CANDIDATE.exists() and policy.candidates_may_run():  # model-written code is not even uploaded for now
     FILES[f"{WORK}/candidate/app.py"] = str(CANDIDATE)
 
 results = []
@@ -75,7 +77,9 @@ def main():
         sys.exit("No dependencies in the sandbox: cannot continue.")
 
     step("RED   exploit vs vulnerable app", lambda: judge("python poc_sqli.py target_app", 1, "VULNERABLE"))
-    if CANDIDATE.exists():
+    if CANDIDATE.exists() and not policy.candidates_may_run():
+        print(f"[SKIP] the candidate patch is not run: {policy.REASON}")
+    elif CANDIDATE.exists():
         step("GREEN exploit vs patched app", lambda: judge("python poc_sqli.py candidate", 0, "SAFE"))
         step("tests on patched app", lambda: judge("APP_DIR=candidate python -m pytest -q", 0, "passed"))
     else:
